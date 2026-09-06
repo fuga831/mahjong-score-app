@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>麻雀点数電卓</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0c2a20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="点数電卓">
+<meta name="description" content="親/子・翻数・アガリの形をタップするだけでロン/ツモの点数をリアルタイム計算する麻雀スコア電卓">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --felt-0:#0c2a20;
+    --felt-1:#123a2b;
+    --felt-2:#1a4a37;
+    --line:#2f5f4a;
+    --ivory:#f4eee0;
+    --ivory-dim:#cdd9cd;
+    --ink:#0f2a20;
+    --ink-soft:#9fc2ac;
+    --gold:#d8b26a;
+    --gold-strong:#e9c983;
+    --red:#c14a3d;
+    --red-soft:#e0847a;
+    --shadow: 0 3px 0 rgba(0,0,0,0.28), 0 6px 14px rgba(0,0,0,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,255,255,0.035) 0, transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(255,255,255,0.03) 0, transparent 45%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 26px),
+      var(--felt-0);
+    color:var(--ivory);
+    font-family:"Noto Sans JP","Zen Maru Gothic",system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .stage{
+    max-width:460px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:18px 14px 34px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  h1{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:1.05rem;
+    letter-spacing:.06em;
+    color:var(--gold-strong);
+    margin:2px 4px 0;
+    display:flex;
+    align-items:center;
+    gap:.5em;
+  }
+  h1 .tile{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:1.6em;height:1.6em;
+    background:var(--ivory);
+    color:var(--ink);
+    border-radius:5px;
+    font-size:.75em;
+    box-shadow:var(--shadow);
+  }
+
+  /* ---- top control row ---- */
+  .toprow{
+    display:flex;
+    gap:10px;
+    align-items:stretch;
+  }
+  .seg{
+    display:flex;
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:4px;
+    gap:4px;
+  }
+  .seg button{
+    flex:1;
+    border:0;
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.92rem;
+    padding:9px 14px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .seg button.active{
+    background:var(--gold);
+    color:var(--ink);
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+
+  .kiriage{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px 12px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .kiriage .label{
+    font-size:.72rem;
+    line-height:1.25;
+    color:var(--ivory-dim);
+  }
+  .kiriage .label b{color:var(--ivory);font-weight:500;}
+  .switch{
+    position:relative;
+    width:38px;height:22px;
+    border-radius:999px;
+    background:var(--felt-2);
+    border:1px solid var(--line);
+    flex-shrink:0;
+    transition:background .15s;
+  }
+  .switch::after{
+    content:"";
+    position:absolute;
+    top:2px;left:2px;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:var(--ivory-dim);
+    transition:transform .15s, background .15s;
+  }
+  .switch.on{background:#3d7a5c;}
+  .switch.on::after{transform:translateX(16px);background:var(--gold-strong);}
+
+  /* ---- result panel ---- */
+  .result{
+    position:relative;
+    background:linear-gradient(180deg, var(--felt-1), var(--felt-2));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px 18px 14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .result::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:16px;
+    padding:1px;
+    background:linear-gradient(135deg, rgba(216,178,106,.5), transparent 40%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    pointer-events:none;
+  }
+  .summary-line{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .summary-line .state{
+    font-size:.78rem;
+    color:var(--ink-soft);
+    letter-spacing:.03em;
+  }
+  .summary-line .state b{
+    color:var(--gold-strong);
+    font-weight:700;
+  }
+  .badge{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-size:.68rem;
+    font-weight:700;
+    color:var(--felt-0);
+    background:var(--red-soft);
+    padding:2px 8px;
+    border-radius:999px;
+    letter-spacing:.04em;
+  }
+  .score-rows{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .score-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 4px 8px 2px;
+  }
+  .score-row + .score-row{
+    border-top:1px dashed var(--line);
+  }
+  .score-row .tag{
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.85rem;
+    color:var(--ivory-dim);
+    width:4.6em;
+    flex-shrink:0;
+  }
+  .score-row .tag .fusub{
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:500;
+    font-size:.62rem;
+    color:#7c9d8b;
+    letter-spacing:0;
+  }
+  .score-row .amt{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+    color:var(--ivory);
+    font-size:1.9rem;
+    line-height:1;
+    text-align:right;
+    flex:1;
+  }
+  .score-row .amt .pt{
+    font-size:.95rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-left:.15em;
+  }
+  .score-row .amt .all{
+    font-size:.8rem;
+    font-weight:700;
+    color:var(--gold-strong);
+    margin-left:.35em;
+  }
+  .split{
+    display:flex;
+    gap:14px;
+    justify-content:flex-end;
+    align-items:baseline;
+  }
+  .split .item{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:1px;
+  }
+  .split .item .who{
+    font-size:.62rem;
+    color:var(--ink-soft);
+    letter-spacing:.05em;
+  }
+  .split .item .num{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+    font-size:1.25rem;
+    color:var(--ivory);
+  }
+  .row-ron .amt{color:var(--red-soft);}
+
+  /* ---- section blocks ---- */
+  section{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 12px 13px;
+    transition:opacity .15s;
+  }
+  section.disabled{
+    opacity:.4;
+    pointer-events:none;
+  }
+  section .sec-title{
+    font-size:.7rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    letter-spacing:.06em;
+    margin-bottom:9px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .sec-title .hint{
+    font-weight:400;
+    color:#7c9d8b;
+  }
+
+  .grid{
+    display:grid;
+    gap:7px;
+  }
+  .grid.g4{grid-template-columns:repeat(4,1fr);}
+  .grid.g5{grid-template-columns:repeat(3,1fr);}
+  .grid.g2{grid-template-columns:repeat(2,1fr);}
+
+  .tile-btn{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.86rem;
+    color:var(--ink);
+    background:var(--ivory);
+    border:1.5px solid transparent;
+    border-radius:9px;
+    padding:11px 6px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 2px 0 rgba(0,0,0,.25);
+    line-height:1.25;
+    transition:transform .08s, background .12s, box-shadow .12s;
+  }
+  .tile-btn small{display:block;font-size:.65rem;font-weight:500;color:#5a6b60;margin-top:1px;}
+  .tile-btn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.25);}
+  .tile-btn.selected{
+    background:var(--gold);
+    border-color:var(--gold-strong);
+    box-shadow:0 2px 0 rgba(0,0,0,.3), 0 0 0 2px rgba(216,178,106,.25);
+  }
+  .tile-btn.selected small{color:#5a4523;}
+  .tile-btn.disabled{
+    opacity:.35;
+    cursor:not-allowed;
+    pointer-events:none;
+  }
+  .tile-btn.tier{background:var(--felt-2);color:var(--ivory);}
+  .tile-btn.tier small{color:var(--ink-soft);}
+  .tile-btn.tier.selected{background:var(--red);color:var(--ivory);border-color:var(--red-soft);}
+  .tile-btn.tier.selected small{color:#f2d4cf;}
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+  }
+  .chip{
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:500;
+    font-size:.78rem;
+    color:var(--ivory-dim);
+    background:var(--felt-2);
+    border:1.5px solid var(--line);
+    border-radius:999px;
+    padding:8px 13px;
+    cursor:pointer;
+    transition:all .12s;
+  }
+  .chip .fu{font-weight:700;color:var(--gold-strong);margin-left:.3em;}
+  .chip.on{
+    background:var(--gold);
+    border-color:var(--gold-strong);
+    color:var(--ink);
+  }
+  .chip.on .fu{color:#5a4523;}
+  .chip.disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+
+  /* ---- mentsu (triplet / kan) list ---- */
+  .mentsu-list{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-top:9px;
+  }
+  .mentsu-empty{
+    font-size:.72rem;
+    color:#7c9d8b;
+  }
+  .mentsu-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    background:var(--felt-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:7px 8px;
+  }
+  .mseg{
+    display:flex;
+    background:var(--felt-1);
+    border-radius:7px;
+    padding:2px;
+    gap:2px;
+  }
+  .mseg button{
+    border:0;
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:500;
+    font-size:.68rem;
+    padding:5px 8px;
+    border-radius:5px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .mseg button.active{background:var(--gold);color:var(--ink);font-weight:700;}
+  .mentsu-row .mfu{
+    margin-left:auto;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    color:var(--gold-strong);
+    font-size:.85rem;
+    padding-left:4px;
+  }
+  .mentsu-row .mremove{
+    width:22px;height:22px;
+    flex-shrink:0;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--felt-1);
+    color:var(--ivory-dim);
+    font-size:.78rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .mentsu-row .mremove:active{background:var(--felt-0);}
+  .mentsu-add{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    margin-top:8px;
+    padding:9px;
+    border-radius:10px;
+    border:1.5px dashed var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:500;
+    font-size:.8rem;
+    cursor:pointer;
+  }
+  .mentsu-add:active{background:var(--felt-2);}
+  .mentsu-add.disabled{opacity:.35;pointer-events:none;}
+
+  .shanpon-note{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    background:var(--felt-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 10px;
+    margin-top:7px;
+  }
+  .shanpon-note .lbl{font-size:.75rem;color:var(--ivory-dim);}
+  .shanpon-note .note{
+    width:100%;
+    font-size:.68rem;
+    color:#7c9d8b;
+  }
+
+  footer{
+    text-align:center;
+    font-size:.65rem;
+    color:#5f8570;
+    margin-top:2px;
+    letter-spacing:.03em;
+  }
+
+</style>
+</head>
+<body>
+
+
+<div class="stage">
+  <h1><span class="tile">🀄</span>麻雀点数電卓</h1>
+
+  <div class="toprow">
+    <div class="seg" id="dealerSeg"></div>
+    <div class="kiriage" id="kiriageToggle" onclick="toggleKiriage()">
+      <span class="label">切り上げ<br><b>満貫</b></span>
+      <span class="switch" id="kiriageSwitch"></span>
+    </div>
+  </div>
+
+  <div class="result" id="resultPanel"></div>
+
+  <section id="hanSection">
+    <div class="sec-title">翻数</div>
+    <div class="grid g4" id="hanGrid1"></div>
+    <div class="grid g5" id="hanGrid2" style="margin-top:7px;"></div>
+  </section>
+
+  <section id="keitaiSection">
+    <div class="sec-title">アガリの形<span class="hint" id="keitaiHint"></span></div>
+    <div class="grid g2" id="keitaiGrid"></div>
+  </section>
+
+  <section id="fuSection">
+    <div class="sec-title">待ちの形</div>
+    <div class="grid g5" id="machiGrid"></div>
+    <div id="shanponSub"></div>
+
+    <div class="sec-title" style="margin-top:11px;">頭・その他<span class="hint">怪しい時だけタップ</span></div>
+    <div class="chip-row" id="chipRow"></div>
+
+    <div class="sec-title" style="margin:11px 0 2px;">刻子・槓<span class="hint">シャンポンの組は含めない</span></div>
+    <div class="mentsu-list" id="mentsuList"></div>
+    <button class="mentsu-add" id="mentsuAddBtn" onclick="addMentsu()">＋ 刻子・槓を追加</button>
+  </section>
+
+  <footer>符は自動で10の位に切り上げ・支払いは100点に切り上げ</footer>
+</div>
+
+<script>
+/* =========================================================================
+   MahjongScore module — pure calculation logic.
+   (In a full project this would live in utils/mahjongScore.ts, independent
+   of the UI below, so it can be unit tested on its own.)
+   ========================================================================= */
+const HAN_TIER_INFO = {
+  mangan:     { minHan: 5,  name: '満貫',   sub: '5翻' },
+  haneman:    { minHan: 6,  name: '跳満',   sub: '6〜7翻' },
+  baiman:     { minHan: 8,  name: '倍満',   sub: '8〜10翻' },
+  sanbaiman:  { minHan: 11, name: '三倍満', sub: '11〜12翻' },
+  yakuman:    { minHan: 13, name: '役満',   sub: '13翻〜' },
+};
+
+function roundUpTo(n, unit){ return Math.ceil(n / unit) * unit; }
+
+// Fu (符) calculation from the simplified UI state.
+// Base fu is always built additively — 20(副底) + the situational bonus for
+// how the hand was completed — and rounded up only once, at the very end.
+const FU_BASE = 20;
+const FU_MENZEN_RON_BONUS = 10; // only when the hand is closed AND won by ron
+const FU_TSUMO_BONUS = 2;       // whenever won by tsumo, open or closed
+
+// One 刻子(triplet) or 槓(kan) set's fu, from its three independent traits.
+// 刻子・明・中張 = 2 is the unit value; 暗(concealed) doubles it, 幺九牌(1/9/字)
+// doubles it again, and 槓(kan) multiplies the whole thing by 4.
+// This single formula reproduces all 8 official values:
+//   明刻2-8=2  明刻19字=4   暗刻2-8=4  暗刻19字=8
+//   明槓2-8=8  明槓19字=16  暗槓2-8=16 暗槓19字=32
+function mentsuFu(m){
+  return 2 * (m.ankou ? 2 : 1) * (m.terminal ? 2 : 1) * (m.isKan ? 4 : 1);
+}
+
+// シャンポン待ち (shanpon wait) special case: the wait itself is worth 0 fu,
+// but the pair that actually completes into a triplet is scored as a
+// minko(明刻) if won by ron (the winning tile came from someone's discard,
+// just like a call) and as an ankou(暗刻) if won by tsumo (self-drawn).
+// So the same shanpon pair contributes a *different* fu depending on ron vs
+// tsumo — this is the one case where a hand's ron-fu and tsumo-fu genuinely
+// diverge beyond the usual +10/+2 base difference.
+function shanponRonFu(terminal){ return terminal ? 4 : 2; }   // = minko value
+function shanponTsumoFu(terminal){ return terminal ? 8 : 4; } // = ankou value
+
+// calcFuPair(state) -> { fuRon, fuTsumo } computed independently, because a
+// hand's fu is not always the same for both winning methods (menzen-ron
+// bonus only applies to ron; tsumo bonus only applies to tsumo; and a
+// shanpon-completed set flips between minko/ankou — see above).
+function calcFuPair(s){
+  if (s.keitai === 'chiitoitsu') return { fuRon: 25, fuTsumo: 25 };
+  if (s.keitai === 'pinfu')      return { fuRon: 30, fuTsumo: 20 }; // pinfu locks both fixed values
+
+  const isClosed = s.keitai !== 'naki';
+  const waitBonus = s.machi === 'bad' ? 2 : 0; // ryanmen and shanpon both add 0 here
+  const shared = waitBonus + (s.yakuhaiHead?2:0) + s.mentsuList.reduce((sum, m) => sum + mentsuFu(m), 0);
+  const shanponRon = s.machi === 'shanpon' ? shanponRonFu(s.shanponTerminal) : 0;
+  const shanponTsumo = s.machi === 'shanpon' ? shanponTsumoFu(s.shanponTerminal) : 0;
+
+  let fuRon = roundUpTo(FU_BASE + (isClosed ? FU_MENZEN_RON_BONUS : 0) + shared + shanponRon, 10);
+  let fuTsumo = roundUpTo(FU_BASE + FU_TSUMO_BONUS + shared + shanponTsumo, 10);
+
+  // 鳴きで加符が何も無い形（いわゆる喰い平和形）は20符になってしまうが、
+  // 実戦のルールでは30符が最低ラインとして扱われる。
+  if (!isClosed) {
+    fuRon = Math.max(fuRon, 30);
+    fuTsumo = Math.max(fuTsumo, 30);
+  }
+  return { fuRon, fuTsumo };
+}
+
+// calcBase(han, fu, isKiriageMangan) -> the 基本点(A) for one han/fu pair.
+function calcBase(han, fu, isKiriageMangan){
+  let base;
+  let cappedToMangan = false;
+  if (han >= 13)      base = 8000;
+  else if (han >= 11) base = 6000;
+  else if (han >= 8)  base = 4000;
+  else if (han >= 6)  base = 3000;
+  else if (han >= 5)  base = 2000;
+  else {
+    base = fu * Math.pow(2, han + 2);
+    if (base > 2000) { base = 2000; cappedToMangan = true; }
+    else if (isKiriageMangan && base >= 1920 && base < 2000) { base = 2000; cappedToMangan = true; }
+  }
+  return { base, cappedToMangan };
+}
+
+// calcScore(isDealer, han, fuRon, fuTsumo, isKiriageMangan) -> pure, no UI
+// dependency. Ron and Tsumo each get their own 基本点 because fuRon and
+// fuTsumo can differ (see calcFuPair).
+function calcScore(isDealer, han, fuRon, fuTsumo, isKiriageMangan){
+  const ronBase = calcBase(han, fuRon, isKiriageMangan);
+  const tsumoBase = calcBase(han, fuTsumo, isKiriageMangan);
+  const ron = isDealer ? roundUpTo(ronBase.base * 6, 100) : roundUpTo(ronBase.base * 4, 100);
+  const tsumo = isDealer
+    ? { all: roundUpTo(tsumoBase.base * 2, 100) }
+    : { fromDealer: roundUpTo(tsumoBase.base * 2, 100), fromNonDealer: roundUpTo(tsumoBase.base * 1, 100) };
+  return { ron, tsumo, ronCapped: ronBase.cappedToMangan, tsumoCapped: tsumoBase.cappedToMangan };
+}
+
+/* ========================================================================= */
+
+const state = {
+  isDealer: false,
+  kiriageMangan: true,
+  hanTier: 3,      // 1 | 2 | 3 | 4 | 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'yakuman'
+  keitai: 'menzen', // 'menzen' | 'naki' | 'pinfu' | 'chiitoitsu'
+  machi: 'ryanmen', // 'ryanmen' | 'bad' | 'shanpon'
+  shanponTerminal: false, // only used when machi==='shanpon'
+  yakuhaiHead: false,
+  mentsuList: [], // { id, ankou:bool(暗/明), terminal:bool(1・9・字/中張), isKan:bool(槓/刻子) } — excludes the shanpon set
+};
+let mentsuSeq = 1;
+
+function setDealer(v){ state.isDealer = v; render(); }
+function toggleKiriage(){ state.kiriageMangan = !state.kiriageMangan; render(); }
+
+function selectHanTier(tier){
+  state.hanTier = tier;
+  render();
+}
+
+function selectKeitai(k){
+  if (state.hanTier !== 1 && state.hanTier !== 2 && state.hanTier !== 3 && state.hanTier !== 4) return;
+  state.keitai = k;
+  // 七対子は役だけで2翻あるため1翻はあり得ない（ピンフはロンなら1翻もあり得るので制限しない）
+  if (k === 'chiitoitsu' && state.hanTier === 1) state.hanTier = 2;
+  render();
+}
+
+function toggleChip(name){
+  state[name] = !state[name];
+  render();
+}
+function setMachi(key){ state.machi = key; render(); }
+function setShanponTerminal(v){ state.shanponTerminal = v; render(); }
+
+const MAX_MENTSU = 4; // a hand has at most 4 sets besides the pair
+function addMentsu(){
+  if (state.mentsuList.length >= MAX_MENTSU) return;
+  state.mentsuList.push({ id: mentsuSeq++, ankou: true, terminal: false, isKan: false });
+  render();
+}
+function setMentsuField(id, field, value){
+  const m = state.mentsuList.find(x => x.id === id);
+  if (m) m[field] = value;
+  render();
+}
+function removeMentsu(id){
+  state.mentsuList = state.mentsuList.filter(x => x.id !== id);
+  render();
+}
+
+function isTierHan(h){ return h === 1 || h === 2 || h === 3 || h === 4; }
+
+function fmt(n){ return n.toLocaleString('ja-JP'); }
+
+function render(){
+  // dealer segment
+  document.getElementById('dealerSeg').innerHTML = `
+    <button class="${!state.isDealer?'':'active'}" onclick="setDealer(true)">親</button>
+    <button class="${!state.isDealer?'active':''}" onclick="setDealer(false)">子</button>
+  `;
+  const sw = document.getElementById('kiriageSwitch');
+  sw.className = 'switch' + (state.kiriageMangan ? ' on' : '');
+
+  // han grids
+  const hanRow1 = [1,2,3,4].map(h=>{
+    const disabled = h===1 && state.keitai==='chiitoitsu';
+    const selected = state.hanTier===h;
+    return `<div class="tile-btn ${selected?'selected':''} ${disabled?'disabled':''}" onclick="selectHanTier(${h})">${h}翻</div>`;
+  }).join('');
+  document.getElementById('hanGrid1').innerHTML = hanRow1;
+
+  const tierKeys = ['mangan','haneman','baiman','sanbaiman','yakuman'];
+  document.getElementById('hanGrid2').innerHTML = tierKeys.map(k=>{
+    const info = HAN_TIER_INFO[k];
+    const selected = state.hanTier===k;
+    return `<div class="tile-btn tier ${selected?'selected':''}" onclick="selectHanTier('${k}')">${info.name}<small>${info.sub}</small></div>`;
+  }).join('');
+
+  // keitai section
+  const keitaiActive = isTierHan(state.hanTier);
+  document.getElementById('keitaiSection').classList.toggle('disabled', !keitaiActive);
+  document.getElementById('keitaiHint').textContent = keitaiActive ? '' : '（満貫以上は不要）';
+  const keitaiOptions = [
+    ['menzen','門前','ポン・チーなし'],
+    ['naki','鳴き','ポン・チーあり'],
+    ['pinfu','ピンフ','形が固定'],
+    ['chiitoitsu','七対子','対子が7組'],
+  ];
+  document.getElementById('keitaiGrid').innerHTML = keitaiOptions.map(([key,label,sub])=>{
+    const disabled = key==='chiitoitsu' && state.hanTier===1;
+    const selected = state.keitai===key;
+    return `<div class="tile-btn ${selected?'selected':''} ${disabled?'disabled':''}" onclick="selectKeitai('${key}')">${label}<small>${sub}</small></div>`;
+  }).join('');
+
+  // fu section
+  const fuLocked = state.keitai==='chiitoitsu' || state.keitai==='pinfu' || !state.keitai;
+  document.getElementById('fuSection').classList.toggle('disabled', !keitaiActive || fuLocked);
+
+  // 待ちの形（良形・悪形・シャンポン）
+  const machiOptions = [
+    ['ryanmen','良形','±0符'],
+    ['bad','カンチャン・ペンチャン・単騎','+2符'],
+    ['shanpon','シャンポン','待ちは±0'],
+  ];
+  document.getElementById('machiGrid').innerHTML = machiOptions.map(([key,label,sub])=>{
+    const selected = state.machi===key;
+    return `<div class="tile-btn ${selected?'selected':''}" onclick="setMachi('${key}')">${label}<small>${sub}</small></div>`;
+  }).join('');
+
+  const shanponSub = document.getElementById('shanponSub');
+  if (state.machi === 'shanpon') {
+    shanponSub.innerHTML = `
+      <div class="shanpon-note">
+        <span class="lbl">シャンポンの牌の種類</span>
+        <div class="mseg">
+          <button class="${!state.shanponTerminal?'active':''}" onclick="setShanponTerminal(false)">中張</button>
+          <button class="${state.shanponTerminal?'active':''}" onclick="setShanponTerminal(true)">1・9・字</button>
+        </div>
+        <span class="note">※ロンなら明刻扱い(+${shanponRonFu(state.shanponTerminal)}符)、ツモなら暗刻扱い(+${shanponTsumoFu(state.shanponTerminal)}符)。この組は下の「刻子・槓」に追加不要です。</span>
+      </div>`;
+  } else {
+    shanponSub.innerHTML = '';
+  }
+
+  const chipDefs = [
+    ['yakuhaiHead','アタマが役牌','+2', false, state.yakuhaiHead],
+  ];
+  document.getElementById('chipRow').innerHTML = chipDefs.map(([key,label,fu,dis,on])=>{
+    return `<div class="chip ${on?'on':''} ${dis?'disabled':''}" onclick="toggleChip('${key}')">${label}<span class="fu">${fu}</span></div>`;
+  }).join('');
+
+  // mentsu (triplet/kan) list — each row: 暗/明 × 刻子/槓 × 中張/1・9・字
+  const mentsuHtml = state.mentsuList.map(m=>{
+    const fu = mentsuFu(m);
+    return `
+      <div class="mentsu-row">
+        <div class="mseg">
+          <button class="${!m.ankou?'active':''}" onclick="setMentsuField(${m.id},'ankou',false)">明</button>
+          <button class="${m.ankou?'active':''}" onclick="setMentsuField(${m.id},'ankou',true)">暗</button>
+        </div>
+        <div class="mseg">
+          <button class="${!m.isKan?'active':''}" onclick="setMentsuField(${m.id},'isKan',false)">刻子</button>
+          <button class="${m.isKan?'active':''}" onclick="setMentsuField(${m.id},'isKan',true)">槓</button>
+        </div>
+        <div class="mseg">
+          <button class="${!m.terminal?'active':''}" onclick="setMentsuField(${m.id},'terminal',false)">中張</button>
+          <button class="${m.terminal?'active':''}" onclick="setMentsuField(${m.id},'terminal',true)">1・9・字</button>
+        </div>
+        <span class="mfu">+${fu}符</span>
+        <button class="mremove" onclick="removeMentsu(${m.id})">×</button>
+      </div>`;
+  }).join('');
+  document.getElementById('mentsuList').innerHTML = mentsuHtml || `<div class="mentsu-empty">刻子・槓が無ければそのまま</div>`;
+  document.getElementById('mentsuAddBtn').classList.toggle('disabled', state.mentsuList.length >= MAX_MENTSU);
+
+  // ---- result ----
+  const panel = document.getElementById('resultPanel');
+  if (!keitaiActive) {
+    const info = HAN_TIER_INFO[state.hanTier];
+    const r = calcScore(state.isDealer, info.minHan, 0, 0, state.kiriageMangan);
+    panel.innerHTML = resultHtml(`${info.name}（${info.sub}）`, null, null, r);
+  } else {
+    const { fuRon, fuTsumo } = calcFuPair(state);
+    const r = calcScore(state.isDealer, state.hanTier, fuRon, fuTsumo, state.kiriageMangan);
+    const ronFuLabel = r.ronCapped ? `${fuRon}符→満貫` : `${fuRon}符`;
+    const tsumoFuLabel = r.tsumoCapped ? `${fuTsumo}符→満貫` : `${fuTsumo}符`;
+    panel.innerHTML = resultHtml(`${state.hanTier}翻`, ronFuLabel, tsumoFuLabel, r);
+  }
+}
+
+function resultHtml(stateLabel, ronFuLabel, tsumoFuLabel, r){
+  const tsumoHtml = r.tsumo.all !== undefined
+    ? `<span class="pt">${fmt(r.tsumo.all)}</span><span class="all">ALL</span>`
+    : `<span class="split">
+         <span class="item"><span class="who">子から</span><span class="num">${fmt(r.tsumo.fromNonDealer)}</span></span>
+         <span class="item"><span class="who">親から</span><span class="num">${fmt(r.tsumo.fromDealer)}</span></span>
+       </span>`;
+  return `
+    <div class="summary-line">
+      <span class="state">現在: <b>${stateLabel}</b></span>
+    </div>
+    <div class="score-rows">
+      <div class="score-row row-ron">
+        <span class="tag">ロン${ronFuLabel ? `<span class="fusub">${ronFuLabel}</span>` : ''}</span>
+        <span class="amt">${fmt(r.ron)}<span class="pt">点</span></span>
+      </div>
+      <div class="score-row row-tsumo">
+        <span class="tag">ツモ${tsumoFuLabel ? `<span class="fusub">${tsumoFuLabel}</span>` : ''}</span>
+        <span class="amt">${tsumoHtml}</span>
+      </div>
+    </div>
+  `;
+}
+
+render();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
