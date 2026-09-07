@@ -306,6 +306,11 @@
     font-weight:400;
     color:#7c9d8b;
   }
+  .sec-title .fu-mode-link{
+    cursor:pointer;
+    text-decoration:underline;
+    color:var(--gold-strong);
+  }
 
   .grid{
     display:grid;
@@ -571,6 +576,100 @@
     font-variant-numeric:tabular-nums;
   }
   .crown{font-size:.7rem;}
+
+  /* ---- 演出モード切り替えスイッチ（画面右上） ---- */
+  .mode-switch-row{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:6px;
+    padding-bottom:8px;
+  }
+  .mode-switch-row .mode-label{
+    font-size:.66rem;
+    color:var(--ink-soft);
+    letter-spacing:.02em;
+  }
+
+  /* ---- 演出モード：終局ボタン・順位発表 ---- */
+  .reveal-btn{
+    display:block;
+    width:100%;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:.95rem;
+    color:var(--ink);
+    background:linear-gradient(160deg, var(--gold-strong), var(--gold));
+    border:1.5px solid var(--gold-strong);
+    border-radius:12px;
+    padding:13px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .reveal-btn:active{transform:translateY(1px);}
+  .reveal-area{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .reveal-card{
+    background:linear-gradient(180deg, var(--felt-1), var(--felt-2));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 14px;
+    box-shadow:var(--shadow);
+    animation:reveal-pop .25s ease-out;
+  }
+  .reveal-card.top{border-color:var(--gold);background:linear-gradient(180deg, #2a4a35, var(--felt-2));}
+  @keyframes reveal-pop{
+    from{opacity:0;transform:scale(.92) translateY(4px);}
+    to{opacity:1;transform:scale(1) translateY(0);}
+  }
+  .reveal-rank{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:.78rem;
+    color:var(--gold-strong);
+    letter-spacing:.04em;
+    margin-bottom:4px;
+  }
+  .reveal-card.top .reveal-rank{font-size:.9rem;}
+  .reveal-member{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+    padding:3px 0;
+  }
+  .reveal-name{
+    font-weight:700;
+    font-size:.9rem;
+    color:var(--ivory);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .reveal-money{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+    font-size:1.15rem;
+    color:var(--ivory);
+    flex-shrink:0;
+  }
+  .reveal-pt{
+    font-size:.66rem;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    flex-shrink:0;
+  }
+  .reveal-done{
+    text-align:center;
+    font-size:.72rem;
+    color:var(--ink-soft);
+    padding:4px 0 2px;
+  }
 
   /* ---- accordion ---- */
   .accordion{
@@ -843,7 +942,7 @@
     <div class="result" id="resultPanel"></div>
 
     <section id="hanSection">
-      <div class="sec-title">翻数</div>
+      <div class="sec-title">翻数<span class="hint fu-mode-link" id="fuModeHint" onclick="toggleFuDirectMode()"></span></div>
       <div class="grid g4" id="hanGrid1"></div>
       <div class="grid g5" id="hanGrid2" style="margin-top:7px;"></div>
     </section>
@@ -864,6 +963,11 @@
       <div class="sec-title" style="margin:11px 0 2px;">刻子・槓<span class="hint">シャンポンの組は含めない</span></div>
       <div class="mentsu-list" id="mentsuList"></div>
       <button class="mentsu-add" id="mentsuAddBtn" onclick="addMentsu()">＋ 刻子・槓を追加</button>
+    </section>
+
+    <section id="fuDirectSection" style="display:none;">
+      <div class="sec-title">符数<span class="hint">中級者・上級者向け</span></div>
+      <input class="num-input" id="manualFuInput" type="number" step="10" inputmode="numeric" placeholder="符数（例: 40）" onchange="setManualFu(parseInt(this.value,10)||0)">
     </section>
 
     <footer>符は自動で10の位に切り上げ・支払いは100点に切り上げ</footer>
@@ -1099,15 +1203,32 @@ const state = {
   shanponTerminal: false, // only used when machi==='shanpon'
   yakuhaiHead: false,
   mentsuList: [], // { id, ankou:bool(暗/明), terminal:bool(1・9・字/中張), isKan:bool(槓/刻子) } — excludes the shanpon set
+  fuDirectMode: false, // 中級者・上級者向け: 符数を直接入力するモード
+  manualFu: 30,
 };
 let mentsuSeq = 1;
 
-function setDealer(v){ state.isDealer = v; render(); }
-function toggleKiriage(){ state.kiriageMangan = !state.kiriageMangan; render(); }
+// 別のボタンへのタップが、テキスト入力のonchange(blur)によるDOM作り直しと
+// 同じ一連の操作の中で競合して消えてしまうのを防ぐため、render()も
+// （得点記録タブのrenderAppと同様に）1フレームだけ遅らせて呼び出す。
+let _renderQueued = false;
+function scheduleRender(){
+  if (_renderQueued) return;
+  _renderQueued = true;
+  requestAnimationFrame(() => { _renderQueued = false; render(); });
+}
+
+function setDealer(v){ state.isDealer = v; scheduleRender(); }
+function toggleKiriage(){ state.kiriageMangan = !state.kiriageMangan; scheduleRender(); }
+function toggleFuDirectMode(){ state.fuDirectMode = !state.fuDirectMode; scheduleRender(); }
+function setManualFu(v){ state.manualFu = Math.max(0, v); scheduleRender(); }
+// 符は常に10の位に切り上げ（七対子の25符だけ例外）というルールを、
+// 直接入力された値にも適用する。
+function normalizeManualFu(v){ return v === 25 ? 25 : roundUpTo(v, 10); }
 
 function selectHanTier(tier){
   state.hanTier = tier;
-  render();
+  scheduleRender();
 }
 
 function selectKeitai(k){
@@ -1115,30 +1236,30 @@ function selectKeitai(k){
   state.keitai = k;
   // 七対子は役だけで2翻あるため1翻はあり得ない（ピンフはロンなら1翻もあり得るので制限しない）
   if (k === 'chiitoitsu' && state.hanTier === 1) state.hanTier = 2;
-  render();
+  scheduleRender();
 }
 
 function toggleChip(name){
   state[name] = !state[name];
-  render();
+  scheduleRender();
 }
-function setMachi(key){ state.machi = key; render(); }
-function setShanponTerminal(v){ state.shanponTerminal = v; render(); }
+function setMachi(key){ state.machi = key; scheduleRender(); }
+function setShanponTerminal(v){ state.shanponTerminal = v; scheduleRender(); }
 
 const MAX_MENTSU = 4; // a hand has at most 4 sets besides the pair
 function addMentsu(){
   if (state.mentsuList.length >= MAX_MENTSU) return;
   state.mentsuList.push({ id: mentsuSeq++, ankou: true, terminal: false, isKan: false });
-  render();
+  scheduleRender();
 }
 function setMentsuField(id, field, value){
   const m = state.mentsuList.find(x => x.id === id);
   if (m) m[field] = value;
-  render();
+  scheduleRender();
 }
 function removeMentsu(id){
   state.mentsuList = state.mentsuList.filter(x => x.id !== id);
-  render();
+  scheduleRender();
 }
 
 function isTierHan(h){ return h === 1 || h === 2 || h === 3 || h === 4; }
@@ -1169,8 +1290,17 @@ function render(){
     return `<div class="tile-btn tier ${selected?'selected':''}" onclick="selectHanTier('${k}')">${info.name}<small>${info.sub}</small></div>`;
   }).join('');
 
-  // keitai section
+  // 符数を直接入力するモード（中級者・上級者向け）への切り替えリンク
   const keitaiActive = isTierHan(state.hanTier);
+  document.getElementById('fuModeHint').textContent = state.fuDirectMode ? '← ガイドで選ぶ' : '符数を直接入力 →';
+  document.getElementById('keitaiSection').style.display = (keitaiActive && state.fuDirectMode) ? 'none' : '';
+  document.getElementById('fuSection').style.display = (keitaiActive && state.fuDirectMode) ? 'none' : '';
+  document.getElementById('fuDirectSection').style.display = (keitaiActive && state.fuDirectMode) ? '' : 'none';
+  if (keitaiActive && state.fuDirectMode) {
+    document.getElementById('manualFuInput').value = state.manualFu;
+  }
+
+  // keitai section
   document.getElementById('keitaiSection').classList.toggle('disabled', !keitaiActive);
   document.getElementById('keitaiHint').textContent = keitaiActive ? '' : '（満貫以上は不要）';
   const keitaiOptions = [
@@ -1253,7 +1383,9 @@ function render(){
     const r = calcScore(state.isDealer, info.minHan, 0, 0, state.kiriageMangan);
     panel.innerHTML = resultHtml(`${info.name}（${info.sub}）`, null, null, r);
   } else {
-    const { fuRon, fuTsumo } = calcFuPair(state);
+    const { fuRon, fuTsumo } = state.fuDirectMode
+      ? (() => { const f = normalizeManualFu(state.manualFu); return { fuRon: f, fuTsumo: f }; })()
+      : calcFuPair(state);
     const r = calcScore(state.isDealer, state.hanTier, fuRon, fuTsumo, state.kiriageMangan);
     const ronFuLabel = r.ronCapped ? `${fuRon}符→満貫` : `${fuRon}符`;
     const tsumoFuLabel = r.tsumoCapped ? `${fuTsumo}符→満貫` : `${fuTsumo}符`;
@@ -1307,6 +1439,7 @@ function defaultLogState(){
       rate: 100,                // 1000点 = ◯◯（換算値。単位は付けない）
       roundingMode: 'gosharokunyuu', // 'gosharokunyuu' | 'roundHalfUp' | 'floor'
       chipUnitYen: 1000,
+      presentationMode: false, // 演出モード: 終局ボタンを押すまで順位・収支を隠す
     },
     hanchans: [], // { id, scores:{name:val}, busterOf:{bustedName:busterName} }
     chips: {},    // name -> 最終枚数
@@ -1318,6 +1451,8 @@ function defaultLogState(){
       editingHanchanId: null,
       formScores: {},
       formBuster: {},
+      revealActive: false, // 演出モードで「終局」ボタンを押したか
+      revealStep: 0,       // 発表済みの順位グループ数
     },
   };
 }
@@ -1447,6 +1582,28 @@ function setRoundingMode(v){ logState.settings.roundingMode = v; saveLogState();
 function setChipUnitYen(v){ logState.settings.chipUnitYen = v; saveLogState(); scheduleRenderApp(); }
 function toggleAccordion(key){ logState.ui[key] = !logState.ui[key]; scheduleRenderApp(); }
 
+/* ---- 演出モード（終局まで順位・収支を隠す） ---- */
+function togglePresentationMode(){
+  logState.settings.presentationMode = !logState.settings.presentationMode;
+  logState.ui.revealActive = false;
+  logState.ui.revealStep = 0;
+  saveLogState(); scheduleRenderApp();
+}
+// 発表順は「2位→3位→…→1位」。1位（優勝）を最後にとっておくことで、
+// 途中の順位から先に発表して最後に一番の見せ場を持ってくる演出。
+function revealOrderFor(playerCount){
+  return playerCount === 3 ? [2, 3, 1] : [2, 3, 4, 1];
+}
+function startReveal(){
+  logState.ui.revealActive = true;
+  logState.ui.revealStep = 1; // 「終局」を押した瞬間に最初の順位（2位）まで発表する
+  scheduleRenderApp();
+}
+function revealNext(totalGroups){
+  if (logState.ui.revealStep < totalGroups) logState.ui.revealStep++;
+  scheduleRenderApp();
+}
+
 /* ---- hanchan form handlers ---- */
 function setFormScore(name, value){ logState.ui.formScores[name] = value; scheduleRenderApp(); }
 function setFormBuster(bustedName, busterName){ logState.ui.formBuster[bustedName] = busterName; scheduleRenderApp(); }
@@ -1481,6 +1638,12 @@ function recordHanchan(){
     logState.hanchans.unshift({ id: logState.hanchanSeq++, scores, busterOf });
   }
   resetFormScores();
+  // 演出モード中に新しい半荘を記録したら、対局が続いている証拠なので
+  // 発表済みの結果はまた隠しておく（次の「終局」まで再びネタバレしない）。
+  if (logState.settings.presentationMode) {
+    logState.ui.revealActive = false;
+    logState.ui.revealStep = 0;
+  }
   saveLogState();
   scheduleRenderApp();
 }
@@ -1733,27 +1896,93 @@ function renderHanchanLog(){
   return `<section><div class="sec-title">対局ログ<span class="hint">${logState.hanchans.length}半荘</span></div><div style="display:flex;flex-direction:column;gap:8px;">${cards}</div></section>`;
 }
 
+function totalCardsHtml(order, totals, topMoney){
+  return `
+    <div class="total-cards">
+      ${order.map(p=>{
+        const isTop = totals.money[p]===topMoney && topMoney > 0;
+        return `
+        <div class="total-card ${isTop?'top':''}">
+          <div class="pname">${isTop?'<span class="crown">👑</span>':''}${escapeHtml(p)}</div>
+          <div class="pmoney">${formatMoney(totals.money[p])}</div>
+          <div class="ppt">${formatPt(totals.pt[p])}pt</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// 演出モード用: 現在の合計収支(円)で順位グループ(同着はまとめる)を作り、
+// 「2位→3位→…→1位」の順に並べ替える。同着で複数の順位にまたがる場合は
+// そのグループのいちばん良い方の順位（loRank）を発表順の基準にする。
+function revealGroupsFor(players, totals, playerCount){
+  const entries = players.map(p => ({ name: p, score: Math.round((totals.money[p]||0) * 100) / 100 }));
+  const ranked = rankPlayers(entries);
+  const order = revealOrderFor(playerCount);
+  const seen = new Set();
+  const groups = [];
+  ranked.forEach(r => {
+    const key = `${r.loRank}-${r.hiRank}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    groups.push({ loRank: r.loRank, hiRank: r.hiRank, members: ranked.filter(x => x.loRank===r.loRank && x.hiRank===r.hiRank) });
+  });
+  groups.sort((a,b) => order.indexOf(a.loRank) - order.indexOf(b.loRank));
+  return groups;
+}
+function revealGroupCardHtml(group, totals){
+  const rankLabel = group.loRank===group.hiRank ? `${group.loRank}位` : `${group.loRank}〜${group.hiRank}位`;
+  const isTop = group.loRank === 1;
+  return `
+    <div class="reveal-card ${isTop?'top':''}">
+      <div class="reveal-rank">${isTop?'👑 ':''}${rankLabel}</div>
+      ${group.members.map(m => `
+        <div class="reveal-member">
+          <span class="reveal-name">${escapeHtml(m.name)}</span>
+          <span class="reveal-money">${formatMoney(totals.money[m.name])}</span>
+          <span class="reveal-pt">${formatPt(totals.pt[m.name])}pt</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderStickyHeader(s, totals){
+  const players = activePlayers();
+  const presentation = logState.settings.presentationMode;
+  const modeSwitchHtml = `
+    <div class="mode-switch-row">
+      <span class="mode-label">演出モード</span>
+      <span class="switch ${presentation?'on':''}" onclick="togglePresentationMode()"></span>
+    </div>`;
+
+  if (!presentation) {
+    const order = [...players].sort((a,b)=> totals.money[b]-totals.money[a]);
+    const topMoney = order.length ? totals.money[order[0]] : 0;
+    return `<div class="sticky-header">${modeSwitchHtml}${totalCardsHtml(order, totals, topMoney)}</div>`;
+  }
+
+  if (!logState.ui.revealActive) {
+    return `<div class="sticky-header">${modeSwitchHtml}
+      <button class="reveal-btn" onclick="startReveal()">🎤 終局！結果を発表する</button>
+    </div>`;
+  }
+
+  const groups = revealGroupsFor(players, totals, logState.settings.playerCount);
+  const done = logState.ui.revealStep >= groups.length;
+  const shownGroups = done ? [...groups].sort((a,b)=>a.loRank-b.loRank) : groups.slice(0, logState.ui.revealStep);
+
+  return `<div class="sticky-header">${modeSwitchHtml}
+    <div class="reveal-area">
+      ${shownGroups.map(g => revealGroupCardHtml(g, totals)).join('')}
+    </div>
+    ${done
+      ? `<div class="reveal-done">🎉 発表終了！次の半荘を記録するとまた隠れます</div>`
+      : `<button class="reveal-btn" onclick="revealNext(${groups.length})">次の順位を発表 →</button>`}
+  </div>`;
+}
+
 function renderLog(){
   const s = settingsWithPlayers();
-  const players = activePlayers();
   const totals = calcTotals(logState.hanchans, logState.chips, s);
-  const order = [...players].sort((a,b)=> totals.money[b]-totals.money[a]);
-  const topMoney = order.length ? totals.money[order[0]] : 0;
-
-  const headerHtml = `
-    <div class="sticky-header">
-      <div class="total-cards">
-        ${order.map(p=>{
-          const isTop = totals.money[p]===topMoney && topMoney > 0;
-          return `
-          <div class="total-card ${isTop?'top':''}">
-            <div class="pname">${isTop?'<span class="crown">👑</span>':''}${escapeHtml(p)}</div>
-            <div class="pmoney">${formatMoney(totals.money[p])}</div>
-            <div class="ppt">${formatPt(totals.pt[p])}pt</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+  const headerHtml = renderStickyHeader(s, totals);
 
   document.getElementById('logTab').innerHTML =
     headerHtml + renderSettingsAccordion() + renderChipsAccordion() + renderHanchanForm() + renderHanchanLog();
