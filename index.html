@@ -51,7 +51,7 @@
     max-width:460px;
     margin:0 auto;
     min-height:100vh;
-    padding:18px 14px 34px;
+    padding:18px 14px calc(70px + env(safe-area-inset-bottom, 0px));
     display:flex;
     flex-direction:column;
     gap:14px;
@@ -482,50 +482,397 @@
     letter-spacing:.03em;
   }
 
+  #calcTab, #logTab{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  /* ---- bottom nav ---- */
+  .bottom-nav{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    display:flex;
+    gap:8px;
+    padding:8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(180deg, rgba(12,42,32,.85), var(--felt-0) 30%);
+    border-top:1px solid var(--line);
+    backdrop-filter:blur(6px);
+    z-index:20;
+  }
+  .bottom-nav button{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    border:0;
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.68rem;
+    padding:8px 4px 6px;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .bottom-nav button .ic{font-size:1.2rem;line-height:1;}
+  .bottom-nav button.active{background:var(--felt-1);color:var(--gold-strong);}
+
+  /* ---- sticky totals header (log tab) ---- */
+  .sticky-header{
+    position:sticky;
+    top:0;
+    z-index:10;
+    margin:0 -14px;
+    padding:10px 14px 12px;
+    background:linear-gradient(180deg, var(--felt-0) 70%, rgba(12,42,32,0));
+  }
+  .total-cards{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(84px,1fr);
+    gap:7px;
+    overflow-x:auto;
+    padding-bottom:2px;
+  }
+  .total-card{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px 9px;
+    box-shadow:var(--shadow);
+  }
+  .total-card.top{background:linear-gradient(160deg, var(--felt-2), var(--felt-1));border-color:var(--gold);}
+  .total-card .pname{
+    font-size:.68rem;
+    font-weight:700;
+    color:var(--ivory-dim);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    display:flex;
+    align-items:center;
+    gap:3px;
+  }
+  .total-card.top .pname{color:var(--gold-strong);}
+  .total-card .pmoney{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+    font-size:1.05rem;
+    color:var(--ivory);
+    margin-top:2px;
+    white-space:nowrap;
+  }
+  .total-card .ppt{
+    font-size:.62rem;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+  .crown{font-size:.7rem;}
+
+  /* ---- accordion ---- */
+  .accordion{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .accordion-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:13px 14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .accordion-head .t{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.88rem;
+    color:var(--ivory);
+  }
+  .accordion-head .t small{
+    display:block;
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:400;
+    font-size:.68rem;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .accordion-head .chev{
+    font-size:.8rem;
+    color:var(--ink-soft);
+    transition:transform .15s;
+  }
+  .accordion.open .chev{transform:rotate(180deg);}
+  .accordion-body{
+    padding:0 14px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .settings-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .settings-row .lbl{
+    font-size:.72rem;
+    font-weight:700;
+    color:var(--ivory-dim);
+    letter-spacing:.03em;
+  }
+  .preset-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .preset-btn{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.76rem;
+    color:var(--ink-soft);
+    background:var(--felt-2);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:7px 11px;
+    cursor:pointer;
+  }
+  .preset-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold-strong);}
+  .num-input{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    font-size:.92rem;
+    color:var(--ivory);
+    background:var(--felt-2);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:9px 11px;
+    width:100%;
+  }
+  .num-input:focus{outline:none;border-color:var(--gold);}
+  /* タップミスで±100点などが加算される入力欄標準の増減ボタンを消す */
+  .num-input::-webkit-outer-spin-button,
+  .num-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .num-input{-moz-appearance:textfield;}
+  .text-input{
+    font-family:"Noto Sans JP",sans-serif;
+    font-weight:500;
+    font-size:.86rem;
+    color:var(--ivory);
+    background:var(--felt-2);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:9px 11px;
+    width:100%;
+  }
+  .text-input:focus{outline:none;border-color:var(--gold);}
+  .inline-fields{display:flex;gap:8px;}
+  .inline-fields > div{flex:1;}
+  .preview-line{
+    font-size:.72rem;
+    color:var(--ink-soft);
+    background:var(--felt-2);
+    border-radius:8px;
+    padding:7px 9px;
+    line-height:1.5;
+  }
+  .preview-line b{color:var(--gold-strong);font-weight:700;}
+
+  .name-edit-row{display:flex;flex-direction:column;gap:6px;}
+  .name-edit-item{display:flex;align-items:center;gap:8px;}
+  .name-edit-item .num{
+    width:1.6em;flex-shrink:0;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;color:var(--ink-soft);font-size:.8rem;text-align:center;
+  }
+
+  /* ---- hanchan input form ---- */
+  .score-input-grid{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .score-input-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .score-input-row .pname{
+    width:5.2em;
+    flex-shrink:0;
+    font-size:.8rem;
+    font-weight:700;
+    color:var(--ivory-dim);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .score-input-row select.buster-select{
+    flex-shrink:0;
+    max-width:6.5em;
+  }
+  .check-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    border-radius:10px;
+    padding:9px 11px;
+    font-size:.78rem;
+    font-weight:700;
+  }
+  .check-banner.ok{background:rgba(61,122,92,.25);color:#9fe0bd;border:1px solid #3d7a5c;}
+  .check-banner.bad{background:rgba(193,74,61,.2);color:var(--red-soft);border:1px solid var(--red);}
+  .record-btn{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:.95rem;
+    color:var(--ink);
+    background:var(--gold);
+    border:0;
+    border-radius:12px;
+    padding:13px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .record-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
+
+  /* ---- hanchan log cards ---- */
+  .hanchan-card{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+  }
+  .hanchan-card .hc-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:7px;
+  }
+  .hanchan-card .hc-title{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.78rem;
+    color:var(--gold-strong);
+  }
+  .hanchan-card .hc-actions{display:flex;gap:6px;}
+  .hanchan-card .hc-actions button{
+    width:24px;height:24px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--felt-2);
+    color:var(--ivory-dim);
+    font-size:.72rem;
+    cursor:pointer;
+  }
+  .hc-rows{display:flex;flex-direction:column;gap:4px;}
+  .hc-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:.8rem;
+  }
+  .hc-row .hc-rank{
+    width:1.6em;flex-shrink:0;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .hc-row.rank1 .hc-rank{color:var(--gold-strong);}
+  .hc-row .hc-name{flex:1;color:var(--ivory-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hc-row .hc-score{
+    width:5em;text-align:right;
+    font-variant-numeric:tabular-nums;
+    color:var(--ivory);
+  }
+  .hc-row .hc-pt{
+    width:4.2em;text-align:right;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .hc-pt.plus{color:#9fe0bd;}
+  .hc-pt.minus{color:var(--red-soft);}
+  .log-empty{
+    text-align:center;
+    font-size:.78rem;
+    color:#7c9d8b;
+    padding:18px 0;
+  }
+
+  .chip-input-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .chip-input-row .pname{width:5.2em;flex-shrink:0;font-size:.8rem;font-weight:700;color:var(--ivory-dim);}
+  .chip-stepper{display:flex;align-items:center;gap:6px;flex:1;}
+  .chip-stepper button{
+    width:30px;height:30px;border-radius:50%;
+    border:1px solid var(--line);background:var(--felt-2);color:var(--ivory);
+    font-size:1rem;font-weight:700;cursor:pointer;flex-shrink:0;
+  }
+  .chip-stepper .val{
+    flex:1;text-align:center;
+    font-family:"Zen Maru Gothic",sans-serif;font-weight:900;
+    font-variant-numeric:tabular-nums;font-size:.95rem;color:var(--ivory);
+  }
 </style>
 </head>
 <body>
 
-
 <div class="stage">
-  <h1><span class="tile">🀄</span>麻雀点数電卓</h1>
+  <h1 id="appTitle"><span class="tile">🀄</span>麻雀点数電卓</h1>
 
-  <div class="toprow">
-    <div class="seg" id="dealerSeg"></div>
-    <div class="kiriage" id="kiriageToggle" onclick="toggleKiriage()">
-      <span class="label">切り上げ<br><b>満貫</b></span>
-      <span class="switch" id="kiriageSwitch"></span>
+  <div id="calcTab">
+    <div class="toprow">
+      <div class="seg" id="dealerSeg"></div>
+      <div class="kiriage" id="kiriageToggle" onclick="toggleKiriage()">
+        <span class="label">切り上げ<br><b>満貫</b></span>
+        <span class="switch" id="kiriageSwitch"></span>
+      </div>
     </div>
+
+    <div class="result" id="resultPanel"></div>
+
+    <section id="hanSection">
+      <div class="sec-title">翻数</div>
+      <div class="grid g4" id="hanGrid1"></div>
+      <div class="grid g5" id="hanGrid2" style="margin-top:7px;"></div>
+    </section>
+
+    <section id="keitaiSection">
+      <div class="sec-title">アガリの形<span class="hint" id="keitaiHint"></span></div>
+      <div class="grid g2" id="keitaiGrid"></div>
+    </section>
+
+    <section id="fuSection">
+      <div class="sec-title">待ちの形</div>
+      <div class="grid g5" id="machiGrid"></div>
+      <div id="shanponSub"></div>
+
+      <div class="sec-title" style="margin-top:11px;">雀頭の形</div>
+      <div class="chip-row" id="chipRow"></div>
+
+      <div class="sec-title" style="margin:11px 0 2px;">刻子・槓<span class="hint">シャンポンの組は含めない</span></div>
+      <div class="mentsu-list" id="mentsuList"></div>
+      <button class="mentsu-add" id="mentsuAddBtn" onclick="addMentsu()">＋ 刻子・槓を追加</button>
+    </section>
+
+    <footer>符は自動で10の位に切り上げ・支払いは100点に切り上げ</footer>
   </div>
 
-  <div class="result" id="resultPanel"></div>
-
-  <section id="hanSection">
-    <div class="sec-title">翻数</div>
-    <div class="grid g4" id="hanGrid1"></div>
-    <div class="grid g5" id="hanGrid2" style="margin-top:7px;"></div>
-  </section>
-
-  <section id="keitaiSection">
-    <div class="sec-title">アガリの形<span class="hint" id="keitaiHint"></span></div>
-    <div class="grid g2" id="keitaiGrid"></div>
-  </section>
-
-  <section id="fuSection">
-    <div class="sec-title">待ちの形</div>
-    <div class="grid g5" id="machiGrid"></div>
-    <div id="shanponSub"></div>
-
-    <div class="sec-title" style="margin-top:11px;">頭・その他<span class="hint">怪しい時だけタップ</span></div>
-    <div class="chip-row" id="chipRow"></div>
-
-    <div class="sec-title" style="margin:11px 0 2px;">刻子・槓<span class="hint">シャンポンの組は含めない</span></div>
-    <div class="mentsu-list" id="mentsuList"></div>
-    <button class="mentsu-add" id="mentsuAddBtn" onclick="addMentsu()">＋ 刻子・槓を追加</button>
-  </section>
-
-  <footer>符は自動で10の位に切り上げ・支払いは100点に切り上げ</footer>
+  <div id="logTab" style="display:none;"></div>
 </div>
+
+<nav class="bottom-nav" id="bottomNav"></nav>
 
 <script>
 /* =========================================================================
@@ -624,6 +971,121 @@ function calcScore(isDealer, han, fuRon, fuTsumo, isKiriageMangan){
     ? { all: roundUpTo(tsumoBase.base * 2, 100) }
     : { fromDealer: roundUpTo(tsumoBase.base * 2, 100), fromNonDealer: roundUpTo(tsumoBase.base * 1, 100) };
   return { ron, tsumo, ronCapped: ronBase.cappedToMangan, tsumoCapped: tsumoBase.cappedToMangan };
+}
+
+/* =========================================================================
+   ScoreSheet module — pure settlement logic for the 得点記録票 tab.
+   (Would live in utils/scoreSheet.ts alongside mahjongScore.ts.)
+   ========================================================================= */
+
+// Rounds |x| (x is in units of "hundreds of raw points") to the nearest 10,
+// i.e. rounds the raw score to the nearest 1000 (=1pt), per the chosen
+// convention, then restores the sign so negative diffs round symmetrically.
+function roundTensDigit(x, mode) {
+  const sign = x < 0 ? -1 : 1;
+  const abs = Math.abs(x);
+  const tens = Math.floor(abs / 10) * 10;
+  const rem = abs - tens;
+  let roundedAbs;
+  if (mode === 'floor') roundedAbs = tens;                       // 切り捨て
+  else if (mode === 'roundHalfUp') roundedAbs = rem >= 5 ? tens + 10 : tens; // 四捨五入
+  else roundedAbs = rem >= 6 ? tens + 10 : tens;                  // 五捨六入(default)
+  return sign * roundedAbs;
+}
+
+// diffRaw: (素点 - 返し点). Returns the result in pt (1pt = 1000点).
+function applyRounding(diffRaw, mode) {
+  const hundreds = Math.round(diffRaw / 100);
+  return roundTensDigit(hundreds, mode) / 10;
+}
+
+// entries: [{name, score}] -> same array with loRank/hiRank/tieCount added.
+// Ties share the same [loRank,hiRank] band so uma/oka can be split evenly.
+function rankPlayers(entries) {
+  const sorted = [...entries].sort((a, b) => b.score - a.score);
+  const result = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1].score === sorted[i].score) j++;
+    for (let k = i; k <= j; k++) {
+      result.push({ ...sorted[k], loRank: i + 1, hiRank: j + 1, tieCount: j - i + 1 });
+    }
+    i = j + 1;
+  }
+  return result;
+}
+
+function umaForExactRank(rank, uma, playerCount) {
+  if (playerCount === 3) {
+    const [C] = uma;
+    if (rank === 1) return C;
+    if (rank === 2) return 0;
+    return -C;
+  }
+  const [A, B] = uma;
+  if (rank === 1) return B;
+  if (rank === 2) return A;
+  if (rank === 3) return -A;
+  return -B;
+}
+// Averages the uma of every integer rank spanned by a tie so a tied group
+// splits it evenly (works for 2-way, 3-way, or all-4-tied groups alike).
+function umaForTieGroup(loRank, hiRank, uma, playerCount) {
+  let sum = 0, count = 0;
+  for (let r = loRank; r <= hiRank; r++) { sum += umaForExactRank(r, uma, playerCount); count++; }
+  return sum / count;
+}
+
+// calcHanchanResult(hanchan, settings) -> { pt: {name: ptDelta}, ranked }
+// pt is this hanchan's own contribution only (not a running total).
+function calcHanchanResult(hanchan, settings) {
+  const { players, startPoints, returnPoints, playerCount, umaEnabled, uma,
+          tobiEnabled, tobiPoints, tobiRecipient } = settings;
+  const entries = players.map(p => ({ name: p, score: hanchan.scores[p] }));
+  const ranked = rankPlayers(entries);
+  const oka = (returnPoints - startPoints) * playerCount / 1000;
+  const topGroup = ranked.filter(r => r.loRank === 1);
+
+  const pt = {};
+  players.forEach(p => { pt[p] = 0; });
+
+  ranked.forEach(r => {
+    pt[r.name] += applyRounding(r.score - returnPoints, settings.roundingMode);
+    if (umaEnabled) pt[r.name] += umaForTieGroup(r.loRank, r.hiRank, uma, playerCount);
+    if (r.loRank === 1) pt[r.name] += oka / topGroup.length;
+  });
+
+  if (tobiEnabled) {
+    players.forEach(p => {
+      if (hanchan.scores[p] < 0) {
+        pt[p] -= tobiPoints;
+        if (tobiRecipient === 'buster' && hanchan.busterOf && hanchan.busterOf[p]) {
+          pt[hanchan.busterOf[p]] += tobiPoints;
+        } else {
+          topGroup.forEach(r => { pt[r.name] += tobiPoints / topGroup.length; });
+        }
+      }
+    });
+  }
+
+  return { pt, ranked };
+}
+
+// calcTotals(hanchans, chips, settings) -> per-player running pt/yen totals.
+function calcTotals(hanchans, chips, settings) {
+  const totals = {};
+  settings.players.forEach(p => { totals[p] = 0; });
+  hanchans.forEach(h => {
+    const { pt } = calcHanchanResult(h, settings);
+    settings.players.forEach(p => { totals[p] += pt[p]; });
+  });
+  const chipSum = settings.players.reduce((s, p) => s + (chips[p] || 0), 0);
+  const money = {};
+  settings.players.forEach(p => {
+    money[p] = totals[p] * settings.rate + (chips[p] || 0) * settings.chipUnitYen;
+  });
+  return { pt: totals, money, chipImbalance: chipSum !== 0, chipSum };
 }
 
 /* ========================================================================= */
@@ -823,7 +1285,515 @@ function resultHtml(stateLabel, ronFuLabel, tsumoFuLabel, r){
   `;
 }
 
-render();
+/* =========================================================================
+   得点記録票タブ — state, handlers, rendering
+   ========================================================================= */
+
+const LOG_STORAGE_KEY = 'mahjong-log-v1';
+
+function defaultLogState(){
+  return {
+    _activeTab: 'calc', // 'calc' | 'log'
+    settings: {
+      playerCount: 4,
+      playerNames: ['P1','P2','P3','P4'],
+      startPoints: 25000,
+      returnPoints: 30000,
+      umaEnabled: true,
+      uma: [10, 30],
+      tobiEnabled: true,
+      tobiPoints: 10,
+      tobiRecipient: 'topPlace', // 'topPlace' | 'buster'
+      rate: 100,                // 1000点 = ◯◯（換算値。単位は付けない）
+      roundingMode: 'gosharokunyuu', // 'gosharokunyuu' | 'roundHalfUp' | 'floor'
+      chipUnitYen: 1000,
+    },
+    hanchans: [], // { id, scores:{name:val}, busterOf:{bustedName:busterName} }
+    chips: {},    // name -> 最終枚数
+    hanchanSeq: 1,
+    ui: {
+      settingsOpen: true,
+      chipsOpen: false,
+      startAdvancedOpen: false,
+      editingHanchanId: null,
+      formScores: {},
+      formBuster: {},
+    },
+  };
+}
+
+function loadLogState(){
+  try {
+    const raw = localStorage.getItem(LOG_STORAGE_KEY);
+    if (!raw) return defaultLogState();
+    const parsed = JSON.parse(raw);
+    const base = defaultLogState();
+    return {
+      ...base,
+      ...parsed,
+      settings: { ...base.settings, ...(parsed.settings || {}) },
+      ui: base.ui, // 開閉状態・入力途中のフォームは復元しない
+    };
+  } catch (e) {
+    return defaultLogState(); // localStorageが使えない環境でもメモリ上で動く
+  }
+}
+
+function saveLogState(){
+  try {
+    const { settings, hanchans, chips, hanchanSeq } = logState;
+    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify({ settings, hanchans, chips, hanchanSeq }));
+  } catch (e) { /* 保存できない環境ではメモリ上のみで継続 */ }
+}
+
+const logState = loadLogState();
+if (logState.hanchans.length > 0) logState.ui.settingsOpen = false;
+
+function activePlayers(){
+  return logState.settings.playerNames.slice(0, logState.settings.playerCount);
+}
+// calcHanchanResult/calcTotals expect a `players` array on the settings
+// object; logState.settings only stores playerNames+playerCount, so merge
+// the derived active-player list in whenever calling into that pure logic.
+function settingsWithPlayers(){
+  return { ...logState.settings, players: activePlayers() };
+}
+function resetFormScores(){
+  logState.ui.formScores = {};
+  logState.ui.formBuster = {};
+  activePlayers().forEach(p => { logState.ui.formScores[p] = ''; });
+}
+resetFormScores();
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escKey(str){ return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function formatMoney(n){
+  const sign = n > 0 ? '+' : n < 0 ? '-' : '';
+  return `${sign}${Math.abs(Math.round(n)).toLocaleString('ja-JP')}`;
+}
+function formatPt(n){
+  const sign = n > 0 ? '+' : n < 0 ? '-' : '';
+  return `${sign}${Math.abs(n).toFixed(1)}`;
+}
+
+/* ---- tab switching ---- */
+function setActiveTab(tab){ logState._activeTab = tab; scheduleRenderApp(); }
+
+/* ---- settings handlers ---- */
+function setPlayerCount(n){
+  logState.settings.playerCount = n;
+  if (n === 3 && logState.settings.uma.length !== 1) logState.settings.uma = [15];
+  if (n === 4 && logState.settings.uma.length !== 2) logState.settings.uma = [10, 30];
+  resetFormScores();
+  saveLogState(); scheduleRenderApp();
+}
+function renamePlayerEverywhere(oldName, newName){
+  if (oldName === newName) return;
+  logState.hanchans.forEach(h => {
+    if (Object.prototype.hasOwnProperty.call(h.scores, oldName)) {
+      h.scores[newName] = h.scores[oldName];
+      delete h.scores[oldName];
+    }
+    if (h.busterOf) {
+      Object.keys(h.busterOf).forEach(k => { if (h.busterOf[k] === oldName) h.busterOf[k] = newName; });
+      if (Object.prototype.hasOwnProperty.call(h.busterOf, oldName)) {
+        h.busterOf[newName] = h.busterOf[oldName];
+        delete h.busterOf[oldName];
+      }
+    }
+  });
+  if (Object.prototype.hasOwnProperty.call(logState.chips, oldName)) {
+    logState.chips[newName] = logState.chips[oldName];
+    delete logState.chips[oldName];
+  }
+  [logState.ui.formScores, logState.ui.formBuster].forEach(obj => {
+    Object.keys(obj).forEach(k => { if (obj[k] === oldName) obj[k] = newName; });
+    if (Object.prototype.hasOwnProperty.call(obj, oldName)) {
+      obj[newName] = obj[oldName];
+      delete obj[oldName];
+    }
+  });
+}
+function setPlayerName(i, value){
+  const oldName = logState.settings.playerNames[i];
+  const newName = (value || '').trim() || `P${i+1}`;
+  logState.settings.playerNames[i] = newName;
+  renamePlayerEverywhere(oldName, newName);
+  saveLogState(); scheduleRenderApp();
+}
+function setStartPointsPreset(v){
+  // オカのあり/なし（返し点との差が+5,000点かどうか）はそのまま保って、
+  // 持ち点だけを切り替える。
+  const okaOn = logState.settings.returnPoints > logState.settings.startPoints;
+  logState.settings.startPoints = v;
+  logState.settings.returnPoints = v + (okaOn ? 5000 : 0);
+  saveLogState(); scheduleRenderApp();
+}
+function setOkaEnabled(v){
+  logState.settings.returnPoints = logState.settings.startPoints + (v ? 5000 : 0);
+  saveLogState(); scheduleRenderApp();
+}
+function setStartPoints(v){ logState.settings.startPoints = v; saveLogState(); scheduleRenderApp(); }
+function setReturnPoints(v){ logState.settings.returnPoints = v; saveLogState(); scheduleRenderApp(); }
+function setUmaEnabled(v){ logState.settings.umaEnabled = v; saveLogState(); scheduleRenderApp(); }
+function setUmaPreset(...vals){ logState.settings.uma = vals; saveLogState(); scheduleRenderApp(); }
+function setTobiEnabled(v){ logState.settings.tobiEnabled = v; saveLogState(); scheduleRenderApp(); }
+function setTobiPoints(v){ logState.settings.tobiPoints = v; saveLogState(); scheduleRenderApp(); }
+function setTobiRecipient(v){ logState.settings.tobiRecipient = v; saveLogState(); scheduleRenderApp(); }
+function setRate(v){ logState.settings.rate = v; saveLogState(); scheduleRenderApp(); }
+function setRoundingMode(v){ logState.settings.roundingMode = v; saveLogState(); scheduleRenderApp(); }
+function setChipUnitYen(v){ logState.settings.chipUnitYen = v; saveLogState(); scheduleRenderApp(); }
+function toggleAccordion(key){ logState.ui[key] = !logState.ui[key]; scheduleRenderApp(); }
+
+/* ---- hanchan form handlers ---- */
+function setFormScore(name, value){ logState.ui.formScores[name] = value; scheduleRenderApp(); }
+function setFormBuster(bustedName, busterName){ logState.ui.formBuster[bustedName] = busterName; scheduleRenderApp(); }
+
+function formTotal(){
+  return activePlayers().reduce((sum, p) => sum + (parseInt(logState.ui.formScores[p], 10) || 0), 0);
+}
+function formIsValid(){
+  const players = activePlayers();
+  if (players.some(p => logState.ui.formScores[p] === '' || isNaN(parseInt(logState.ui.formScores[p], 10)))) return false;
+  if (formTotal() !== logState.settings.startPoints * logState.settings.playerCount) return false;
+  if (logState.settings.tobiEnabled && logState.settings.tobiRecipient === 'buster') {
+    for (const p of players) {
+      if ((parseInt(logState.ui.formScores[p], 10) || 0) < 0 && !logState.ui.formBuster[p]) return false;
+    }
+  }
+  return true;
+}
+function recordHanchan(){
+  if (!formIsValid()) return;
+  const players = activePlayers();
+  const scores = {};
+  players.forEach(p => { scores[p] = parseInt(logState.ui.formScores[p], 10); });
+  const busterOf = {};
+  players.forEach(p => { if (scores[p] < 0 && logState.ui.formBuster[p]) busterOf[p] = logState.ui.formBuster[p]; });
+
+  if (logState.ui.editingHanchanId !== null) {
+    const h = logState.hanchans.find(x => x.id === logState.ui.editingHanchanId);
+    if (h) { h.scores = scores; h.busterOf = busterOf; }
+    logState.ui.editingHanchanId = null;
+  } else {
+    logState.hanchans.unshift({ id: logState.hanchanSeq++, scores, busterOf });
+  }
+  resetFormScores();
+  saveLogState();
+  scheduleRenderApp();
+}
+function editHanchan(id){
+  const h = logState.hanchans.find(x => x.id === id);
+  if (!h) return;
+  logState.ui.editingHanchanId = id;
+  logState.ui.formScores = {};
+  logState.ui.formBuster = {};
+  activePlayers().forEach(p => {
+    logState.ui.formScores[p] = String(h.scores[p] ?? '');
+    if (h.busterOf && h.busterOf[p]) logState.ui.formBuster[p] = h.busterOf[p];
+  });
+  scheduleRenderApp(() => {
+    const el = document.getElementById('hanchanFormAnchor');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+function cancelEditHanchan(){
+  logState.ui.editingHanchanId = null;
+  resetFormScores();
+  scheduleRenderApp();
+}
+function deleteHanchan(id){
+  logState.hanchans = logState.hanchans.filter(x => x.id !== id);
+  if (logState.ui.editingHanchanId === id) cancelEditHanchan();
+  saveLogState();
+  scheduleRenderApp();
+}
+function chipStep(name, delta){
+  logState.chips[name] = (logState.chips[name] || 0) + delta;
+  saveLogState(); scheduleRenderApp();
+}
+
+/* ---- rendering ---- */
+function renderSettingsAccordion(){
+  const s = logState.settings;
+  const open = logState.ui.settingsOpen;
+  const umaPresets4 = [[5,10],[10,20],[10,30],[20,30]];
+  const umaPresets3 = [[10],[15],[20]];
+  const umaPreview = s.playerCount === 3
+    ? `1位+${s.uma[0]} / 2位±0 / 3位-${s.uma[0]}`
+    : `1位+${s.uma[1]} / 2位+${s.uma[0]} / 3位-${s.uma[0]} / 4位-${s.uma[1]}`;
+  const oka = (s.returnPoints - s.startPoints) * s.playerCount / 1000;
+
+  return `
+    <div class="accordion ${open?'open':''}">
+      <div class="accordion-head" onclick="toggleAccordion('settingsOpen')">
+        <div class="t">対局ルール設定<small>${s.playerCount}人打ち・${s.startPoints.toLocaleString()}持ち${s.returnPoints.toLocaleString()}返し</small></div>
+        <div class="chev">▾</div>
+      </div>
+      ${open ? `
+      <div class="accordion-body">
+        <div class="settings-row">
+          <div class="lbl">人数</div>
+          <div class="preset-row">
+            <button class="preset-btn ${s.playerCount===4?'active':''}" onclick="setPlayerCount(4)">4人打ち</button>
+            <button class="preset-btn ${s.playerCount===3?'active':''}" onclick="setPlayerCount(3)">3人打ち</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl">プレイヤー名</div>
+          <div class="name-edit-row">
+            ${activePlayers().map((p,i)=>`
+              <div class="name-edit-item">
+                <span class="num">${i+1}</span>
+                <input class="text-input" value="${escapeHtml(p)}" onchange="setPlayerName(${i}, this.value)">
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl">配給原点（最初の持ち点）</div>
+          <div class="preset-row">
+            ${[25000,30000,35000].map(v=>`<button class="preset-btn ${s.startPoints===v?'active':''}" onclick="setStartPointsPreset(${v})">${v.toLocaleString()}点</button>`).join('')}
+          </div>
+          <label style="font-weight:400;font-size:.72rem;display:flex;align-items:center;gap:5px;margin-top:9px;color:var(--ivory-dim);">
+            <input type="checkbox" ${s.returnPoints>s.startPoints?'checked':''} onchange="setOkaEnabled(this.checked)"> オカあり（トップの取り分に+5,000点）
+          </label>
+          <div class="preview-line">返し点（自動計算）: <b>${s.returnPoints.toLocaleString()}点</b></div>
+          <div class="preview-line">オカ（1位への上乗せ）: <b>${oka>=0?'+':''}${oka.toFixed(1)}pt</b></div>
+          <button class="mentsu-add" style="margin-top:8px;" onclick="toggleAccordion('startAdvancedOpen')">${logState.ui.startAdvancedOpen?'▴ 細かい指定を閉じる':'▾ 持ち点・返し点を自分で細かく指定する'}</button>
+          ${logState.ui.startAdvancedOpen ? `
+            <div class="inline-fields" style="margin-top:8px;">
+              <div><input class="num-input" type="number" step="1000" value="${s.startPoints}" onchange="setStartPoints(parseInt(this.value,10)||0)"></div>
+              <div><input class="num-input" type="number" step="1000" value="${s.returnPoints}" onchange="setReturnPoints(parseInt(this.value,10)||0)"></div>
+            </div>` : ''}
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>ウマ</span>
+            <label style="font-weight:400;font-size:.72rem;display:flex;align-items:center;gap:5px;">
+              <input type="checkbox" ${s.umaEnabled?'checked':''} onchange="setUmaEnabled(this.checked)"> 有効
+            </label>
+          </div>
+          ${s.umaEnabled ? `
+            <div class="preset-row">
+              ${(s.playerCount===3?umaPresets3:umaPresets4).map(preset=>{
+                const active = JSON.stringify(preset)===JSON.stringify(s.uma);
+                const label = preset.length===1 ? `±${preset[0]}` : `${preset[0]}-${preset[1]}`;
+                return `<button class="preset-btn ${active?'active':''}" onclick="setUmaPreset(${preset.join(',')})">${label}</button>`;
+              }).join('')}
+            </div>
+            <div class="preview-line">配分: <b>${umaPreview}</b></div>
+          ` : ''}
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>飛び賞</span>
+            <label style="font-weight:400;font-size:.72rem;display:flex;align-items:center;gap:5px;">
+              <input type="checkbox" ${s.tobiEnabled?'checked':''} onchange="setTobiEnabled(this.checked)"> 有効
+            </label>
+          </div>
+          ${s.tobiEnabled ? `
+            <input class="num-input" type="number" step="1" value="${s.tobiPoints}" onchange="setTobiPoints(parseFloat(this.value)||0)" placeholder="pt">
+            <div class="preset-row">
+              <button class="preset-btn ${s.tobiRecipient==='topPlace'?'active':''}" onclick="setTobiRecipient('topPlace')">1位にまとめて加算</button>
+              <button class="preset-btn ${s.tobiRecipient==='buster'?'active':''}" onclick="setTobiRecipient('buster')">飛ばした人に加算</button>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl">レート（1000点あたりの換算値）</div>
+          <div class="preview-line">現在のレート: <b>1000点＝${s.rate}</b></div>
+          <input class="num-input" type="number" step="10" value="${s.rate}" onchange="setRate(parseFloat(this.value)||0)" placeholder="1000点あたりの換算値">
+        </div>
+
+        <div class="settings-row">
+          <div class="lbl">端数処理</div>
+          <div class="preset-row">
+            <button class="preset-btn ${s.roundingMode==='gosharokunyuu'?'active':''}" onclick="setRoundingMode('gosharokunyuu')">五捨六入</button>
+            <button class="preset-btn ${s.roundingMode==='roundHalfUp'?'active':''}" onclick="setRoundingMode('roundHalfUp')">四捨五入</button>
+            <button class="preset-btn ${s.roundingMode==='floor'?'active':''}" onclick="setRoundingMode('floor')">切り捨て</button>
+          </div>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderChipsAccordion(){
+  const s = logState.settings;
+  const open = logState.ui.chipsOpen;
+  const players = activePlayers();
+  const chipSum = players.reduce((sum,p)=> sum + (logState.chips[p]||0), 0);
+  return `
+    <div class="accordion ${open?'open':''}">
+      <div class="accordion-head" onclick="toggleAccordion('chipsOpen')">
+        <div class="t">チップ精算<small>全対局終了後にまとめて入力</small></div>
+        <div class="chev">▾</div>
+      </div>
+      ${open ? `
+      <div class="accordion-body">
+        <div class="settings-row">
+          <div class="lbl">チップ単価</div>
+          <input class="num-input" type="number" step="100" value="${s.chipUnitYen}" onchange="setChipUnitYen(parseFloat(this.value)||0)">
+        </div>
+        ${players.map(p=>`
+          <div class="chip-input-row">
+            <span class="pname">${escapeHtml(p)}</span>
+            <div class="chip-stepper">
+              <button onclick="chipStep('${escKey(p)}',-1)">−</button>
+              <span class="val">${logState.chips[p]||0}枚</span>
+              <button onclick="chipStep('${escKey(p)}',1)">＋</button>
+            </div>
+          </div>`).join('')}
+        <div class="check-banner ${chipSum===0?'ok':'bad'}">
+          ${chipSum===0 ? '✓ 合計 ±0枚' : `⚠ 合計 ${chipSum>0?'+':''}${chipSum}枚（ゼロサムになっていません）`}
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderHanchanForm(){
+  const s = logState.settings;
+  const players = activePlayers();
+  const total = formTotal();
+  const expected = s.startPoints * s.playerCount;
+  const allFilled = players.every(p => logState.ui.formScores[p] !== '' && !isNaN(parseInt(logState.ui.formScores[p],10)));
+  const bustedPlayers = players.filter(p => (parseInt(logState.ui.formScores[p],10)||0) < 0);
+  const needsBuster = s.tobiEnabled && s.tobiRecipient === 'buster';
+  const busterOk = !needsBuster || bustedPlayers.every(p => logState.ui.formBuster[p]);
+  const valid = allFilled && total === expected && busterOk;
+  const editing = logState.ui.editingHanchanId !== null;
+  // 「第◯半荘」は作成時の連番(id)ではなく、削除後も欠番が出ないよう
+  // 現在残っている対局ログの中での順番（古い方から1,2,3...）で数え直す。
+  const editingIdx = editing ? logState.hanchans.findIndex(x => x.id === logState.ui.editingHanchanId) : -1;
+  const editingDispNum = editingIdx >= 0 ? logState.hanchans.length - editingIdx : '';
+
+  return `
+    <section id="hanchanFormAnchor">
+      <div class="sec-title">${editing?`第${editingDispNum}半荘を編集中`:'半荘の結果を入力'}<span class="hint">${editing?'':`第${logState.hanchans.length+1}半荘`}</span></div>
+      <div class="score-input-grid">
+        ${players.map(p=>{
+          const val = parseInt(logState.ui.formScores[p],10);
+          const busted = !isNaN(val) && val < 0;
+          return `
+          <div class="score-input-row">
+            <span class="pname">${escapeHtml(p)}</span>
+            <input class="num-input" type="number" step="100" inputmode="numeric" placeholder="素点"
+              value="${logState.ui.formScores[p]}" onchange="setFormScore('${escKey(p)}', this.value)">
+            ${busted && needsBuster ? `
+              <select class="text-input buster-select" onchange="setFormBuster('${escKey(p)}', this.value)">
+                <option value="">誰が飛ばした？</option>
+                ${players.filter(x=>x!==p).map(x=>`<option value="${escapeHtml(x)}" ${logState.ui.formBuster[p]===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}
+              </select>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="check-banner ${(allFilled && total===expected)?'ok':'bad'}" style="margin-top:9px;">
+        ${!allFilled ? '素点を入力してください' : total===expected ? `✓ 合計 ${total.toLocaleString()}点` : `⚠ 合計 ${total.toLocaleString()}点（${total-expected>0?'+':''}${(total-expected).toLocaleString()}点のズレ）`}
+      </div>
+      <button class="record-btn" style="margin-top:9px;width:100%;" ${valid?'':'disabled'} onclick="recordHanchan()">${editing?'この内容で更新する':'この半荘を記録'}</button>
+      ${editing ? `<button class="mentsu-add" style="margin-top:7px;" onclick="cancelEditHanchan()">編集をキャンセル</button>` : ''}
+    </section>`;
+}
+
+function renderHanchanLog(){
+  if (logState.hanchans.length === 0) {
+    return `<section><div class="sec-title">対局ログ</div><div class="log-empty">まだ記録がありません</div></section>`;
+  }
+  const s = settingsWithPlayers();
+  // 「第◯半荘」は作成時の連番(id)ではなく、削除しても欠番が出ないよう
+  // 現在残っている対局ログの中での順番（一番古いものを1として数え直す）で表示する。
+  const cards = logState.hanchans.map((h, idx)=>{
+    const dispNum = logState.hanchans.length - idx;
+    const { pt, ranked } = calcHanchanResult(h, s);
+    const rows = [...ranked].sort((a,b)=>a.loRank-b.loRank).map(r=>`
+      <div class="hc-row ${r.loRank===1?'rank1':''}">
+        <span class="hc-rank">${r.loRank===r.hiRank ? r.loRank : `${r.loRank}-${r.hiRank}`}</span>
+        <span class="hc-name">${escapeHtml(r.name)}</span>
+        <span class="hc-score">${r.score.toLocaleString()}</span>
+        <span class="hc-pt ${pt[r.name]>=0?'plus':'minus'}">${formatPt(pt[r.name])}</span>
+      </div>`).join('');
+    return `
+      <div class="hanchan-card">
+        <div class="hc-head">
+          <span class="hc-title">第${dispNum}半荘</span>
+          <span class="hc-actions">
+            <button onclick="editHanchan(${h.id})">✎</button>
+            <button onclick="deleteHanchan(${h.id})">×</button>
+          </span>
+        </div>
+        <div class="hc-rows">${rows}</div>
+      </div>`;
+  }).join('');
+  return `<section><div class="sec-title">対局ログ<span class="hint">${logState.hanchans.length}半荘</span></div><div style="display:flex;flex-direction:column;gap:8px;">${cards}</div></section>`;
+}
+
+function renderLog(){
+  const s = settingsWithPlayers();
+  const players = activePlayers();
+  const totals = calcTotals(logState.hanchans, logState.chips, s);
+  const order = [...players].sort((a,b)=> totals.money[b]-totals.money[a]);
+  const topMoney = order.length ? totals.money[order[0]] : 0;
+
+  const headerHtml = `
+    <div class="sticky-header">
+      <div class="total-cards">
+        ${order.map(p=>{
+          const isTop = totals.money[p]===topMoney && topMoney > 0;
+          return `
+          <div class="total-card ${isTop?'top':''}">
+            <div class="pname">${isTop?'<span class="crown">👑</span>':''}${escapeHtml(p)}</div>
+            <div class="pmoney">${formatMoney(totals.money[p])}</div>
+            <div class="ppt">${formatPt(totals.pt[p])}pt</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('logTab').innerHTML =
+    headerHtml + renderSettingsAccordion() + renderChipsAccordion() + renderHanchanForm() + renderHanchanLog();
+}
+
+/* ---- top-level bootstrap ---- */
+// テキスト入力のonchange（blur）と、別のボタンへのタップは同じ一連の操作の中で
+// 同期的に発火する。renderApp()をその場で同期実行すると、タップ先のボタンごと
+// DOMを作り直してしまい、直後に来るはずのクリックイベントが宛先を失って
+// 消えてしまう（＝名前変更などの直後だけ他の項目が反応しなくなる不具合の原因）。
+// 1フレーム分だけ描画を遅らせることで、先に来ているクリックを本来のボタンで
+// 処理させてから、最新のstateで安全に描画し直す。
+let _renderAppQueued = false;
+let _renderAppCallbacks = [];
+function scheduleRenderApp(afterRender){
+  if (afterRender) _renderAppCallbacks.push(afterRender);
+  if (_renderAppQueued) return;
+  _renderAppQueued = true;
+  requestAnimationFrame(() => {
+    _renderAppQueued = false;
+    renderApp();
+    const cbs = _renderAppCallbacks.splice(0);
+    cbs.forEach(cb => cb());
+  });
+}
+function renderApp(){
+  const onLog = logState._activeTab === 'log';
+  document.getElementById('appTitle').innerHTML = onLog
+    ? '<span class="tile">🀄</span>得点記録票'
+    : '<span class="tile">🀄</span>麻雀点数電卓';
+  document.getElementById('calcTab').style.display = onLog ? 'none' : '';
+  document.getElementById('logTab').style.display = onLog ? '' : 'none';
+  document.getElementById('bottomNav').innerHTML = `
+    <button class="${onLog?'':'active'}" onclick="setActiveTab('calc')"><span class="ic">🀄</span>点数計算</button>
+    <button class="${onLog?'active':''}" onclick="setActiveTab('log')"><span class="ic">📋</span>得点記録</button>
+  `;
+  if (onLog) renderLog(); else render();
+}
+
+renderApp();
 </script>
 
 <script>
