@@ -524,6 +524,11 @@
     backdrop-filter:blur(6px);
     z-index:20;
   }
+  /* ストアアプリでバナー広告(ネイティブのオーバーレイビュー)を表示している間は、
+     アプリ自身の下部ナビを広告の高さぶん上に逃がし、誤クリックを防ぐための
+     余白も確保する。広告そのものはDOM外(ネイティブ側)に描画される。 */
+  .bottom-nav.with-ad-banner{ bottom:50px; }
+  body.ad-banner-active .stage{ padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px)); }
   .bottom-nav button{
     flex:1;
     display:flex;
@@ -632,6 +637,11 @@
     padding:13px;
     cursor:pointer;
     box-shadow:var(--shadow);
+  }
+  .reveal-btn:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+    box-shadow:none;
   }
   .reveal-btn:active{transform:translateY(1px);}
   .reveal-area{
@@ -904,6 +914,49 @@
     word-break:break-all;
   }
 
+  /* ---- 課金ステータス・ペイウォール ---- */
+  .premium-status-row{ margin-bottom:10px; }
+  .premium-badge{
+    display:block;
+    background:rgba(216,178,106,.15);
+    border:1px solid var(--gold);
+    color:var(--gold-strong);
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:.76rem;
+    font-weight:700;
+    text-align:center;
+  }
+  .paywall-copy{
+    font-size:.82rem;
+    color:var(--ivory-dim);
+    line-height:1.6;
+    margin:0 0 10px;
+  }
+  .paywall-benefits{
+    margin:0 0 14px;
+    padding:0;
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .paywall-benefits li{
+    font-size:.8rem;
+    color:var(--ivory);
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+  }
+  .paywall-note{
+    margin-top:10px;
+    font-size:.68rem;
+    color:var(--ink-soft);
+    text-align:center;
+    line-height:1.5;
+  }
+
   /* ---- accordion ---- */
   .accordion{
     background:var(--felt-1);
@@ -1024,6 +1077,12 @@
   }
 
   /* ---- hanchan input form ---- */
+  .score-scale-hint{
+    font-size:.68rem;
+    color:var(--ink-soft);
+    margin:-2px 0 8px;
+  }
+  .score-scale-hint b{color:var(--ivory-dim);}
   .score-input-grid{
     display:flex;
     flex-direction:column;
@@ -1212,6 +1271,7 @@
 
 <nav class="bottom-nav" id="bottomNav"></nav>
 <div id="historyModalRoot"></div>
+<div id="paywallModalRoot"></div>
 <input type="file" id="importFileInput" accept="application/json,.json" style="display:none;" onchange="handleImportFile(this.files)">
 
 <script>
@@ -1654,6 +1714,164 @@ function resultHtml(stateLabel, ronFuLabel, tsumoFuLabel, r){
 }
 
 /* =========================================================================
+   マネタイズ(広告・課金) — ネイティブ橋渡し層
+   ここで言う「ネイティブ」とは、Capacitorでラップしたストア配信版アプリの中で
+   動いている状態のこと。このArtifactプレビューや素のブラウザ・GitHub Pages版
+   (window.Capacitorが存在しない環境)では、Nativeの全メソッドが安全に
+   何もしない(no-op)。広告・課金はストアアプリの中だけで有効になる。
+   実際にCapacitorプロジェクトへ組み込む手順は mahjong-app/CAPACITOR_SETUP.md
+   を参照(このサンドボックス環境ではnpm installやAndroidビルドができないため、
+   ネイティブ側の実機動作はまだ検証できていない)。
+   ========================================================================= */
+
+const FREE_MATCH_LIMIT = 3; // 無料で保存できる対局数の上限(マジックナンバー化しない)
+
+const MONETIZATION_CONFIG = {
+  // ▼▼▼ 実際のAdMob/Play Consoleの値に差し替えてください(初期値はダミー) ▼▼▼
+  admobAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY',
+  admobBannerUnitId: 'ca-app-pub-XXXXXXXXXXXXXXXX/BANNERID',
+  admobInterstitialUnitId: 'ca-app-pub-XXXXXXXXXXXXXXXX/INTERSTITIALID',
+  billingProductId: 'remove_ads_unlock_history', // Play Consoleの管理対象商品(買い切り)ID
+  // ▲▲▲ ここまで ▲▲▲
+  fallbackPriceLabel: '¥400', // Billing APIから価格が取得できない場合の表示用(実価格はストア設定に従う)
+};
+
+let _billingReady = false;
+let _pendingPurchaseResolvers = [];
+function _resolvePendingPurchase(success){
+  const resolvers = _pendingPurchaseResolvers.splice(0);
+  resolvers.forEach(r => r(success));
+}
+
+const Native = {
+  isNativeApp(){
+    try { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+    catch (e) { return false; }
+  },
+  /* ---- 広告(AdMob, @capacitor-community/admob想定) ---- */
+  async initAds(){
+    if (!this.isNativeApp()) return;
+    try {
+      const AdMob = window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+      if (AdMob && AdMob.initialize) await AdMob.initialize({});
+    } catch (e) { /* 広告SDKの初期化に失敗しても本体機能は止めない */ }
+  },
+  async showBanner(){
+    if (!this.isNativeApp() || isPremiumUnlocked()) return;
+    try {
+      const AdMob = window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+      if (AdMob && AdMob.showBanner) {
+        await AdMob.showBanner({
+          adId: MONETIZATION_CONFIG.admobBannerUnitId,
+          adSize: 'BANNER',
+          position: 'BOTTOM_CENTER',
+          margin: 0,
+        });
+      }
+    } catch (e) { /* オフライン等での読み込み失敗は握りつぶし、通常の操作を妨げない */ }
+  },
+  async hideBanner(){
+    if (!this.isNativeApp()) return;
+    try {
+      const AdMob = window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+      if (AdMob && AdMob.hideBanner) await AdMob.hideBanner();
+    } catch (e) { /* 失敗しても無視 */ }
+  },
+  async showInterstitial(){
+    if (!this.isNativeApp() || isPremiumUnlocked()) return;
+    try {
+      const AdMob = window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+      if (!AdMob || !AdMob.prepareInterstitial) return;
+      await AdMob.prepareInterstitial({ adId: MONETIZATION_CONFIG.admobInterstitialUnitId });
+      await AdMob.showInterstitial();
+    } catch (e) { /* 未読込・オフライン時は何もしない(対局終了フロー自体は止めない) */ }
+  },
+  /* ---- 課金(Google Play Billing, cordova-plugin-purchase想定) ----
+     https://purchase.cordova.fovea.cc/ のイベント駆動API(v13系)を前提にした実装例。
+     プラグインのバージョンによりAPIが変わることがあるため、実機ビルド時は
+     公式ドキュメントで最新のAPIを確認してください(このサンドボックスでは
+     Android実機・Play Billingサンドボックスでの検証ができていません)。 */
+  async initBilling(){
+    if (!this.isNativeApp() || _billingReady) return;
+    try {
+      const store = window.CdvPurchase && window.CdvPurchase.store;
+      if (!store) return;
+      _billingReady = true;
+      store.register([{
+        id: MONETIZATION_CONFIG.billingProductId,
+        type: store.ProductType.NON_CONSUMABLE,
+        platform: store.Platform.GOOGLE_PLAY,
+      }]);
+      store.when().approved(transaction => transaction.verify());
+      store.when().verified(receipt => receipt.finish());
+      store.when().productUpdated(() => {
+        const product = store.get(MONETIZATION_CONFIG.billingProductId);
+        const owned = !!(product && product.owned);
+        if (owned && !logState.settings.isPremium) {
+          logState.settings.isPremium = true;
+          saveLogState();
+          Native.hideBanner();
+          scheduleRenderApp();
+        }
+        if (owned) _resolvePendingPurchase(true);
+      });
+      await store.initialize([store.GOOGLE_PLAY]);
+    } catch (e) { /* 課金SDK初期化に失敗しても無料枠のまま安全に継続する */ }
+  },
+  // 戻り値: true(有効な購入あり) / false(購入なし) / null(判定できなかった＝
+  // 非ネイティブ環境か通信エラー等。呼び出し側は既存のisPremium値を維持すること)。
+  async restorePurchases(){
+    if (!this.isNativeApp()) return null;
+    try {
+      const store = window.CdvPurchase && window.CdvPurchase.store;
+      if (!store) return null;
+      await this.initBilling();
+      await store.restorePurchases();
+      const product = store.get(MONETIZATION_CONFIG.billingProductId);
+      return !!(product && product.owned);
+    } catch (e) { return null; }
+  },
+  async purchasePremium(){
+    if (!this.isNativeApp()) return false;
+    try {
+      const store = window.CdvPurchase && window.CdvPurchase.store;
+      if (!store) return false;
+      await this.initBilling();
+      const product = store.get(MONETIZATION_CONFIG.billingProductId);
+      const offer = product && product.getOffer && product.getOffer();
+      if (!offer) return false;
+      const resultPromise = new Promise(resolve => {
+        _pendingPurchaseResolvers.push(resolve);
+        // 60秒経ってもイベントが来なければ諦める(ユーザーがストアのダイアログを
+        // キャンセルした場合など、approvedイベントが永遠に来ないケースの保険)。
+        setTimeout(() => {
+          _pendingPurchaseResolvers = _pendingPurchaseResolvers.filter(r => r !== resolve);
+          resolve(false);
+        }, 60000);
+      });
+      await offer.order();
+      return await resultPromise;
+    } catch (e) { return false; }
+  },
+  getPriceLabel(){
+    try {
+      const store = window.CdvPurchase && window.CdvPurchase.store;
+      const product = store && store.get(MONETIZATION_CONFIG.billingProductId);
+      const offer = product && product.getOffer && product.getOffer();
+      return (offer && offer.pricing && offer.pricing.price) || MONETIZATION_CONFIG.fallbackPriceLabel;
+    } catch (e) { return MONETIZATION_CONFIG.fallbackPriceLabel; }
+  },
+};
+
+// ストアアプリ以外(このプレビューや素のブラウザ・GitHub Pages版)では常にtrue、
+// つまり「常に無制限・広告なし」を返す。ユーザーの指示により、広告/課金/対局数
+// 制限はCapacitorでラップしたストア配信版アプリの中だけに適用するため。
+function isPremiumUnlocked(){
+  if (!Native.isNativeApp()) return true;
+  return !!logState.settings.isPremium;
+}
+
+/* =========================================================================
    得点記録票タブ — state, handlers, rendering
    ========================================================================= */
 
@@ -1677,6 +1895,7 @@ function defaultLogState(){
       roundingMode: 'gosharokunyuu', // 'gosharokunyuu' | 'roundHalfUp' | 'floor'
       chipUnitYen: 1000,
       presentationMode: false, // 演出モード: 終局ボタンを押すまで順位・収支を隠す
+      isPremium: false, // 広告削除+記録し放題(買い切り課金)が有効か。ストアアプリのみ意味を持つ
     },
     hanchans: [], // 進行中の対局のみ。{ id, scores:{name:val}, busterOf:{bustedName:busterName} }
     chips: {},    // 進行中の対局のみ。name -> 最終枚数
@@ -1701,7 +1920,10 @@ function defaultLogState(){
       confirmDeleteArchiveId: null,
       importResultMsg: null,
       shareFallbackMsg: null,
-      statsOpenGroups: {}, // 成績タブでどのメンバー構成グループを展開しているか(key: memberKey)
+      paywallOpen: false,       // 無料枠(FREE_MATCH_LIMIT)超過時のペイウォール表示中か
+      paywallPurchasing: false,
+      paywallErrorMsg: null,
+      billingMsg: null,         // 「購入を復元」結果などの短いメッセージ
     },
   };
 }
@@ -1720,21 +1942,16 @@ function mergeParsedLogState(parsed){
 }
 
 function loadLogState(){
-  let raw = null, rawV1 = null;
   try {
-    raw = localStorage.getItem(LOG_STORAGE_KEY);
-    rawV1 = localStorage.getItem(LOG_STORAGE_KEY_V1);
+    const raw = localStorage.getItem(LOG_STORAGE_KEY);
+    if (raw) return mergeParsedLogState(JSON.parse(raw));
+    // v2キーが無ければ旧v1キーを探し、あれば読み替えて移行する（matchHistoryは[]で補完）。
+    const rawV1 = localStorage.getItem(LOG_STORAGE_KEY_V1);
+    if (rawV1) return mergeParsedLogState(JSON.parse(rawV1));
+    return defaultLogState();
   } catch (e) {
     return defaultLogState(); // localStorageが使えない環境でもメモリ上で動く
   }
-  // v2が壊れていても(パース失敗)、v1が生きていればそちらへフォールバックする。
-  if (raw) {
-    try { return mergeParsedLogState(JSON.parse(raw)); } catch (e) { /* v1へフォールバック */ }
-  }
-  if (rawV1) {
-    try { return mergeParsedLogState(JSON.parse(rawV1)); } catch (e) { /* デフォルトへ */ }
-  }
-  return defaultLogState();
 }
 
 function saveLogState(){
@@ -1747,6 +1964,19 @@ function saveLogState(){
 const logState = loadLogState();
 if (logState.hanchans.length > 0) logState.ui.settingsOpen = false;
 saveLogState(); // v1からの移行時などに、v2キーへ即座に書き直しておく
+
+// 起動時に必ずPlay Billingへ購入履歴を問い合わせて上書きする。ローカル保存の
+// isPremiumだけに頼ると、端末変更・再インストール時に無料枠へ戻ってしまうため。
+// (非ネイティブ環境ではrestorePurchases()がnullを返し、何も上書きしない。)
+Native.initAds();
+(async () => {
+  const restored = await Native.restorePurchases();
+  if (restored !== null && restored !== logState.settings.isPremium) {
+    logState.settings.isPremium = restored;
+    saveLogState();
+    scheduleRenderApp();
+  }
+})();
 
 function activePlayers(){
   return logState.settings.playerNames.slice(0, logState.settings.playerCount);
@@ -1860,6 +2090,7 @@ function revealOrderFor(playerCount){
   return playerCount === 3 ? [2, 3, 1] : [2, 3, 4, 1];
 }
 function startReveal(){
+  if (logState.hanchans.length === 0) return; // 対局ログが無い状態では発表しても意味が無いので何もしない
   logState.ui.revealActive = true;
   logState.ui.revealStep = 1; // 「終局」を押した瞬間に最初の順位（2位）まで発表する
   scheduleRenderApp();
@@ -1881,6 +2112,14 @@ function cancelEndMatch(){
 }
 function confirmEndMatch(){
   logState.ui.confirmEndMatch = false;
+  // 無料枠(FREE_MATCH_LIMIT)を超えて新規保存しようとした場合は、保存フローに進まず
+  // ペイウォールを表示する。半荘データ(hanchans)はここでは一切消さない。
+  if (!isPremiumUnlocked() && logState.matchHistory.length >= FREE_MATCH_LIMIT) {
+    logState.ui.paywallOpen = true;
+    logState.ui.paywallErrorMsg = null;
+    scheduleRenderApp();
+    return;
+  }
   archiveCurrentMatch();
 }
 // 進行中のhanchans/chips/settingsをスナップショットとしてmatchHistoryへ保存し、
@@ -1908,6 +2147,50 @@ function archiveCurrentMatch(){
   cancelEditHanchan_noRender();
   saveLogState();
   scheduleRenderApp();
+  // 1つの対局が終わった区切りの良いタイミングでだけインタースティシャルを挟む
+  // (半荘記録のたびには出さない)。非ネイティブ環境・購入済みの場合は内部でno-op。
+  Native.showInterstitial();
+}
+
+/* ---- ペイウォール(無料枠超過時) ---- */
+async function purchaseFromPaywall(){
+  logState.ui.paywallPurchasing = true;
+  logState.ui.paywallErrorMsg = null;
+  scheduleRenderApp();
+  const success = await Native.purchasePremium();
+  logState.ui.paywallPurchasing = false;
+  if (success) {
+    logState.settings.isPremium = true;
+    logState.ui.paywallOpen = false;
+    saveLogState();
+    Native.hideBanner();
+    // ユーザーにもう一度ボタンを押させず、そのまま保存まで完了させる。
+    archiveCurrentMatch();
+  } else {
+    logState.ui.paywallErrorMsg = '購入を完了できませんでした。通信環境をご確認のうえ、もう一度お試しください。';
+    scheduleRenderApp();
+  }
+}
+function closePaywall(){
+  logState.ui.paywallOpen = false;
+  logState.ui.paywallErrorMsg = null;
+  scheduleRenderApp();
+}
+async function restorePurchasesFromMenu(){
+  logState.ui.billingMsg = '購入情報を確認しています…';
+  scheduleRenderApp();
+  const restored = await Native.restorePurchases();
+  if (restored === true) {
+    logState.settings.isPremium = true;
+    saveLogState();
+    Native.hideBanner();
+    logState.ui.billingMsg = '購入情報を復元しました。広告が削除され、記録し放題になりました。';
+  } else if (restored === false) {
+    logState.ui.billingMsg = '有効な購入が見つかりませんでした。';
+  } else {
+    logState.ui.billingMsg = '購入情報を確認できませんでした。通信環境をご確認のうえ、もう一度お試しください。';
+  }
+  scheduleRenderApp();
 }
 // cancelEditHanchan()相当だがscheduleRenderAppを二重に呼ばないための内部版
 function cancelEditHanchan_noRender(){
@@ -1919,16 +2202,27 @@ function cancelEditHanchan_noRender(){
 function setFormScore(name, value){ logState.ui.formScores[name] = value; scheduleRenderApp(); }
 function setFormBuster(bustedName, busterName){ logState.ui.formBuster[bustedName] = busterName; scheduleRenderApp(); }
 
+// 素点は必ず100点単位（下2桁は常に00）なので、入力フォームでは下2桁を省略した
+// 「100点単位の値」を打ってもらい、実際の素点にする時だけ100倍する。
+// 例: 入力欄に "350" → 実際の素点は 35,000。
+const SCORE_INPUT_SCALE = 100;
+function formScoreActual(p){
+  const raw = parseFloat(logState.ui.formScores[p]);
+  return isNaN(raw) ? NaN : Math.round(raw * SCORE_INPUT_SCALE);
+}
 function formTotal(){
-  return activePlayers().reduce((sum, p) => sum + (parseInt(logState.ui.formScores[p], 10) || 0), 0);
+  return activePlayers().reduce((sum, p) => {
+    const v = formScoreActual(p);
+    return sum + (isNaN(v) ? 0 : v);
+  }, 0);
 }
 function formIsValid(){
   const players = activePlayers();
-  if (players.some(p => logState.ui.formScores[p] === '' || isNaN(parseInt(logState.ui.formScores[p], 10)))) return false;
+  if (players.some(p => logState.ui.formScores[p] === '' || isNaN(formScoreActual(p)))) return false;
   if (formTotal() !== logState.settings.startPoints * logState.settings.playerCount) return false;
   if (logState.settings.tobiEnabled && logState.settings.tobiRecipient === 'buster') {
     for (const p of players) {
-      if ((parseInt(logState.ui.formScores[p], 10) || 0) < 0 && !logState.ui.formBuster[p]) return false;
+      if ((formScoreActual(p) || 0) < 0 && !logState.ui.formBuster[p]) return false;
     }
   }
   return true;
@@ -1937,7 +2231,7 @@ function recordHanchan(){
   if (!formIsValid()) return;
   const players = activePlayers();
   const scores = {};
-  players.forEach(p => { scores[p] = parseInt(logState.ui.formScores[p], 10); });
+  players.forEach(p => { scores[p] = formScoreActual(p); });
   const busterOf = {};
   players.forEach(p => { if (scores[p] < 0 && logState.ui.formBuster[p]) busterOf[p] = logState.ui.formBuster[p]; });
 
@@ -1971,7 +2265,8 @@ function editHanchan(id){
   logState.ui.formScores = {};
   logState.ui.formBuster = {};
   activePlayers().forEach(p => {
-    logState.ui.formScores[p] = String(h.scores[p] ?? '');
+    // 保存されている実際の素点(例:35,000)を、入力欄用の100点単位の表記(例:350)に戻す。
+    logState.ui.formScores[p] = h.scores[p] === undefined ? '' : String(h.scores[p] / SCORE_INPUT_SCALE);
     if (h.busterOf && h.busterOf[p]) logState.ui.formBuster[p] = h.busterOf[p];
   });
   scheduleRenderApp(() => {
@@ -2142,8 +2437,8 @@ function renderHanchanForm(){
   const players = activePlayers();
   const total = formTotal();
   const expected = s.startPoints * s.playerCount;
-  const allFilled = players.every(p => logState.ui.formScores[p] !== '' && !isNaN(parseInt(logState.ui.formScores[p],10)));
-  const bustedPlayers = players.filter(p => (parseInt(logState.ui.formScores[p],10)||0) < 0);
+  const allFilled = players.every(p => logState.ui.formScores[p] !== '' && !isNaN(formScoreActual(p)));
+  const bustedPlayers = players.filter(p => (formScoreActual(p)||0) < 0);
   const needsBuster = s.tobiEnabled && s.tobiRecipient === 'buster';
   const busterOk = !needsBuster || bustedPlayers.every(p => logState.ui.formBuster[p]);
   const valid = allFilled && total === expected && busterOk;
@@ -2156,14 +2451,15 @@ function renderHanchanForm(){
   return `
     <section id="hanchanFormAnchor">
       <div class="sec-title">${editing?`第${editingDispNum}半荘を編集中`:'半荘の結果を入力'}<span class="hint">${editing?'':`第${logState.hanchans.length+1}半荘`}</span></div>
+      <div class="score-scale-hint">下2桁(00)は省略できます　例: 25,000点 → <b>250</b></div>
       <div class="score-input-grid">
         ${players.map(p=>{
-          const val = parseInt(logState.ui.formScores[p],10);
+          const val = formScoreActual(p);
           const busted = !isNaN(val) && val < 0;
           return `
           <div class="score-input-row">
             <span class="pname">${escapeHtml(p)}</span>
-            <input class="num-input" type="number" step="100" inputmode="numeric" placeholder="素点"
+            <input class="num-input" type="number" step="1" inputmode="numeric" placeholder="例:250"
               value="${logState.ui.formScores[p]}" onchange="setFormScore('${escKey(p)}', this.value)">
             ${busted && needsBuster ? `
               <select class="text-input buster-select" onchange="setFormBuster('${escKey(p)}', this.value)">
@@ -2301,9 +2597,9 @@ function renderStickyHeader(s, totals){
   }
 
   if (!logState.ui.revealActive) {
-    const noData = logState.hanchans.length === 0;
+    const noLog = logState.hanchans.length === 0;
     return `<div class="sticky-header">${modeSwitchHtml}
-      <button class="reveal-btn" ${noData?'disabled style="opacity:.4;cursor:not-allowed;"':''} onclick="startReveal()">🎤 終局！結果を発表する</button>
+      <button class="reveal-btn" ${noLog ? 'disabled' : ''} onclick="startReveal()">🎤 終局！結果を発表する</button>
     </div>`;
   }
 
@@ -2524,20 +2820,6 @@ function calcCareerStats(matchHistory, playerName){
   };
 }
 
-// 成績タブの「メンバー構成グループ」ごとの開閉状態。
-// 初期状態では一番対局数が多いグループ(isDefaultOpen=true)だけを開いておき、
-// それ以外は閉じておく（色々な面子と打つ人が、毎回スクロールしなくて済むように）。
-function isStatsGroupOpen(key, isDefaultOpen){
-  if (Object.prototype.hasOwnProperty.call(logState.ui.statsOpenGroups, key)) {
-    return logState.ui.statsOpenGroups[key];
-  }
-  return !!isDefaultOpen;
-}
-function toggleStatsGroup(key){
-  logState.ui.statsOpenGroups[key] = !isStatsGroupOpen(key);
-  scheduleRenderApp();
-}
-
 function renderHistoryStats(){
   if (logState.matchHistory.length === 0) {
     return `<div class="history-empty">まだ成績データがありません<br>対局を終了すると、ここに通算成績が表示されます</div>`;
@@ -2548,16 +2830,14 @@ function renderHistoryStats(){
     const s = m.settingsSnapshot;
     const players = s.playerNames.slice(0, s.playerCount);
     const key = memberKey(players);
-    if (!groups[key]) groups[key] = { key, players, playerCount: s.playerCount, matches: [] };
+    if (!groups[key]) groups[key] = { players, playerCount: s.playerCount, matches: [] };
     groups[key].matches.push(m);
   });
   const groupList = Object.values(groups).sort((a,b) => b.matches.length - a.matches.length);
 
-  return groupList.map((g, idx) => {
-    // 一番対局数が多いグループ(idx===0)だけ初期状態で開いておく。
-    const open = isStatsGroupOpen(g.key, idx === 0);
+  return groupList.map(g => {
     const totalHanchans = g.matches.reduce((sum,m)=>sum+m.hanchans.length, 0);
-    const cards = !open ? '' : g.players.map(p => {
+    const cards = g.players.map(p => {
       const st = calcCareerStats(g.matches, p);
       if (!st) return '';
       const primaryLine = g.playerCount === 4
@@ -2581,12 +2861,9 @@ function renderHistoryStats(){
         </div>`;
     }).join('');
     return `
-      <div class="accordion stat-group ${open?'open':''}">
-        <div class="accordion-head" onclick="toggleStatsGroup('${escKey(g.key)}')">
-          <div class="t">${escapeHtml(g.players.join('・'))}<small>${g.matches.length}対局・${totalHanchans}半荘</small></div>
-          <div class="chev">▾</div>
-        </div>
-        ${open ? `<div class="accordion-body"><div class="stat-cards">${cards}</div></div>` : ''}
+      <div class="stat-group">
+        <div class="stat-group-head"><span>${escapeHtml(g.players.join('・'))}</span><span class="hint">${g.matches.length}対局・${totalHanchans}半荘</span></div>
+        <div class="stat-cards">${cards}</div>
       </div>`;
   }).join('');
 }
@@ -2720,6 +2997,14 @@ function renderHistoryModal(){
     title = '対局履歴';
     bodyHtml = `
       ${logState.ui.importResultMsg ? `<div class="check-banner ok" style="margin-bottom:10px;">${escapeHtml(logState.ui.importResultMsg)}</div>` : ''}
+      ${Native.isNativeApp() ? `
+        <div class="premium-status-row">
+          ${isPremiumUnlocked()
+            ? `<span class="premium-badge">✓ 広告削除・記録し放題 が有効です</span>`
+            : `<button class="mentsu-add" onclick="restorePurchasesFromMenu()">購入を復元</button>`}
+        </div>
+        ${logState.ui.billingMsg ? `<div class="check-banner ok" style="margin-bottom:10px;">${escapeHtml(logState.ui.billingMsg)}</div>` : ''}
+      ` : ''}
       <div class="history-toolbar">
         <button class="mentsu-add" onclick="exportMatchHistory(false)">⬇ エクスポート</button>
         <button class="mentsu-add" onclick="triggerImport()">⬆ インポート</button>
@@ -2749,6 +3034,38 @@ function renderHistoryModal(){
     </div>`;
 }
 
+/* ---- ペイウォール(無料枠超過時のモーダル) ---- */
+function renderPaywallModal(){
+  const root = document.getElementById('paywallModalRoot');
+  if (!root) return;
+  if (!logState.ui.paywallOpen) { root.innerHTML = ''; return; }
+  const price = Native.getPriceLabel();
+  const purchasing = logState.ui.paywallPurchasing;
+  root.innerHTML = `
+    <div class="history-modal-overlay">
+      <div class="history-modal paywall-modal">
+        <div class="history-modal-head">
+          <span class="history-modal-title">ここまで${FREE_MATCH_LIMIT}対局、お疲れ様でした！🎉</span>
+          <button class="history-close" onclick="closePaywall()" ${purchasing?'disabled':''}>×</button>
+        </div>
+        <div class="history-modal-body">
+          <p class="paywall-copy">無料版では、対局の記録を${FREE_MATCH_LIMIT}件まで保存できます。続きを記録するには、広告削除＋記録し放題プランをご利用ください。</p>
+          <ul class="paywall-benefits">
+            <li>✓ 広告が表示されなくなります</li>
+            <li>✓ 対局の記録を無制限に保存できます</li>
+            <li>✓ 一度のお支払いで、追加料金はありません</li>
+          </ul>
+          ${logState.ui.paywallErrorMsg ? `<div class="check-banner bad" style="margin-bottom:10px;">${escapeHtml(logState.ui.paywallErrorMsg)}</div>` : ''}
+          <button class="record-btn" style="width:100%;" ${purchasing?'disabled':''} onclick="purchaseFromPaywall()">
+            ${purchasing ? '処理中…' : `${escapeHtml(price)} で広告削除＋記録し放題にする`}
+          </button>
+          <button class="mentsu-add" style="margin-top:9px;" ${purchasing?'disabled':''} onclick="closePaywall()">閉じる（今回は保存しない）</button>
+          <div class="paywall-note">※閉じても今回の対局データは消えません。半荘の記録はそのまま残るので、後からいつでも購入して保存できます。</div>
+        </div>
+      </div>
+    </div>`;
+}
+
 /* ---- top-level bootstrap ---- */
 // テキスト入力のonchange（blur）と、別のボタンへのタップは同じ一連の操作の中で
 // 同期的に発火する。renderApp()をその場で同期実行すると、タップ先のボタンごと
@@ -2772,23 +3089,40 @@ function scheduleRenderApp(afterRender){
 function renderApp(){
   const onLog = logState._activeTab === 'log';
   document.getElementById('appTitle').innerHTML = onLog
-    ? '<span class="tile">🀄</span>得点記録票'
+    ? '<span class="tile">📋</span>得点記録票'
     : '<span class="tile">🀄</span>麻雀点数電卓';
   document.getElementById('calcTab').style.display = onLog ? 'none' : '';
   document.getElementById('logTab').style.display = onLog ? '' : 'none';
   // 対局履歴(☰)は得点記録票タブでのみ意味を持つので、それ以外では隠す。
   document.getElementById('historyMenuBtn').style.display = onLog ? '' : 'none';
-  if (!onLog) logState.ui.historyOpen = false; // 計算タブに切り替えたらモーダルも閉じる
+  if (!onLog) { logState.ui.historyOpen = false; logState.ui.paywallOpen = false; } // 計算タブに切り替えたらモーダルも閉じる
   document.getElementById('bottomNav').innerHTML = `
     <button class="${onLog?'':'active'}" onclick="setActiveTab('calc')"><span class="ic">🀄</span>点数計算</button>
     <button class="${onLog?'active':''}" onclick="setActiveTab('log')"><span class="ic">📋</span>得点記録</button>
   `;
   if (onLog) renderLog(); else render();
   renderHistoryModal();
+  renderPaywallModal();
+  updateBannerState(onLog);
+}
+
+// バナー広告(ネイティブのオーバーレイビュー)の表示/非表示を、得点記録票タブに
+// いるか・モーダルが開いていないか・購入済みでないかに応じて切り替える。
+// 状態が変わった時だけNative.showBanner/hideBannerを呼び、無駄な呼び出しを避ける。
+let _bannerShown = false;
+function updateBannerState(onLog){
+  const modalOpen = logState.ui.historyOpen || logState.ui.paywallOpen;
+  const shouldShow = Native.isNativeApp() && onLog && !modalOpen && !isPremiumUnlocked();
+  document.body.classList.toggle('ad-banner-active', shouldShow);
+  const nav = document.getElementById('bottomNav');
+  if (nav) nav.classList.toggle('with-ad-banner', shouldShow);
+  if (shouldShow && !_bannerShown) { _bannerShown = true; Native.showBanner(); }
+  else if (!shouldShow && _bannerShown) { _bannerShown = false; Native.hideBanner(); }
 }
 
 renderApp();
 </script>
+
 
 <script>
 if ('serviceWorker' in navigator) {
