@@ -1701,6 +1701,7 @@ function defaultLogState(){
       confirmDeleteArchiveId: null,
       importResultMsg: null,
       shareFallbackMsg: null,
+      statsOpenGroups: {}, // 成績タブでどのメンバー構成グループを展開しているか(key: memberKey)
     },
   };
 }
@@ -1719,16 +1720,21 @@ function mergeParsedLogState(parsed){
 }
 
 function loadLogState(){
+  let raw = null, rawV1 = null;
   try {
-    const raw = localStorage.getItem(LOG_STORAGE_KEY);
-    if (raw) return mergeParsedLogState(JSON.parse(raw));
-    // v2キーが無ければ旧v1キーを探し、あれば読み替えて移行する（matchHistoryは[]で補完）。
-    const rawV1 = localStorage.getItem(LOG_STORAGE_KEY_V1);
-    if (rawV1) return mergeParsedLogState(JSON.parse(rawV1));
-    return defaultLogState();
+    raw = localStorage.getItem(LOG_STORAGE_KEY);
+    rawV1 = localStorage.getItem(LOG_STORAGE_KEY_V1);
   } catch (e) {
     return defaultLogState(); // localStorageが使えない環境でもメモリ上で動く
   }
+  // v2が壊れていても(パース失敗)、v1が生きていればそちらへフォールバックする。
+  if (raw) {
+    try { return mergeParsedLogState(JSON.parse(raw)); } catch (e) { /* v1へフォールバック */ }
+  }
+  if (rawV1) {
+    try { return mergeParsedLogState(JSON.parse(rawV1)); } catch (e) { /* デフォルトへ */ }
+  }
+  return defaultLogState();
 }
 
 function saveLogState(){
@@ -2295,8 +2301,9 @@ function renderStickyHeader(s, totals){
   }
 
   if (!logState.ui.revealActive) {
+    const noData = logState.hanchans.length === 0;
     return `<div class="sticky-header">${modeSwitchHtml}
-      <button class="reveal-btn" onclick="startReveal()">🎤 終局！結果を発表する</button>
+      <button class="reveal-btn" ${noData?'disabled style="opacity:.4;cursor:not-allowed;"':''} onclick="startReveal()">🎤 終局！結果を発表する</button>
     </div>`;
   }
 
@@ -2517,6 +2524,20 @@ function calcCareerStats(matchHistory, playerName){
   };
 }
 
+// 成績タブの「メンバー構成グループ」ごとの開閉状態。
+// 初期状態では一番対局数が多いグループ(isDefaultOpen=true)だけを開いておき、
+// それ以外は閉じておく（色々な面子と打つ人が、毎回スクロールしなくて済むように）。
+function isStatsGroupOpen(key, isDefaultOpen){
+  if (Object.prototype.hasOwnProperty.call(logState.ui.statsOpenGroups, key)) {
+    return logState.ui.statsOpenGroups[key];
+  }
+  return !!isDefaultOpen;
+}
+function toggleStatsGroup(key){
+  logState.ui.statsOpenGroups[key] = !isStatsGroupOpen(key);
+  scheduleRenderApp();
+}
+
 function renderHistoryStats(){
   if (logState.matchHistory.length === 0) {
     return `<div class="history-empty">まだ成績データがありません<br>対局を終了すると、ここに通算成績が表示されます</div>`;
@@ -2527,14 +2548,16 @@ function renderHistoryStats(){
     const s = m.settingsSnapshot;
     const players = s.playerNames.slice(0, s.playerCount);
     const key = memberKey(players);
-    if (!groups[key]) groups[key] = { players, playerCount: s.playerCount, matches: [] };
+    if (!groups[key]) groups[key] = { key, players, playerCount: s.playerCount, matches: [] };
     groups[key].matches.push(m);
   });
   const groupList = Object.values(groups).sort((a,b) => b.matches.length - a.matches.length);
 
-  return groupList.map(g => {
+  return groupList.map((g, idx) => {
+    // 一番対局数が多いグループ(idx===0)だけ初期状態で開いておく。
+    const open = isStatsGroupOpen(g.key, idx === 0);
     const totalHanchans = g.matches.reduce((sum,m)=>sum+m.hanchans.length, 0);
-    const cards = g.players.map(p => {
+    const cards = !open ? '' : g.players.map(p => {
       const st = calcCareerStats(g.matches, p);
       if (!st) return '';
       const primaryLine = g.playerCount === 4
@@ -2558,9 +2581,12 @@ function renderHistoryStats(){
         </div>`;
     }).join('');
     return `
-      <div class="stat-group">
-        <div class="stat-group-head"><span>${escapeHtml(g.players.join('・'))}</span><span class="hint">${g.matches.length}対局・${totalHanchans}半荘</span></div>
-        <div class="stat-cards">${cards}</div>
+      <div class="accordion stat-group ${open?'open':''}">
+        <div class="accordion-head" onclick="toggleStatsGroup('${escKey(g.key)}')">
+          <div class="t">${escapeHtml(g.players.join('・'))}<small>${g.matches.length}対局・${totalHanchans}半荘</small></div>
+          <div class="chev">▾</div>
+        </div>
+        ${open ? `<div class="accordion-body"><div class="stat-cards">${cards}</div></div>` : ''}
       </div>`;
   }).join('');
 }
