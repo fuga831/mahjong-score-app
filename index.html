@@ -79,6 +79,25 @@
     font-size:.75em;
     box-shadow:var(--shadow);
   }
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .title-row h1{margin:2px 0 0;flex:1;min-width:0;}
+  .hamburger-btn{
+    flex-shrink:0;
+    width:34px;height:34px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--felt-1);
+    color:var(--ivory);
+    font-size:1.05rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .hamburger-btn:active{background:var(--felt-2);}
 
   /* ---- top control row ---- */
   .toprow{
@@ -533,6 +552,14 @@
     padding:10px 14px 12px;
     background:linear-gradient(180deg, var(--felt-0) 70%, rgba(12,42,32,0));
   }
+  /* 演出モードの発表中/発表後は、順位カードが積み重なって縦に長くなり得るため
+     sticky化すると下のフォーム等を覆い隠してしまう。この状態だけは通常の
+     ブロックとして扱い、スクロールで自然に流れていくようにする。 */
+  .header-block{
+    margin:0 -14px;
+    padding:10px 14px 12px;
+    background:linear-gradient(180deg, var(--felt-0) 70%, rgba(12,42,32,0));
+  }
   .total-cards{
     display:grid;
     grid-auto-flow:column;
@@ -669,6 +696,212 @@
     font-size:.72rem;
     color:var(--ink-soft);
     padding:4px 0 2px;
+  }
+
+  .share-icon-btn{
+    border:1px solid var(--line);
+    background:var(--felt-1);
+    color:var(--ivory-dim);
+    border-radius:8px;
+    width:26px;height:26px;
+    font-size:.78rem;
+    line-height:1;
+    cursor:pointer;
+    margin-right:auto;
+  }
+  .share-icon-btn:active{background:var(--felt-2);}
+
+  /* ---- 対局を終了する ---- */
+  .end-match-btn{
+    display:block;
+    width:100%;
+    margin-top:9px;
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.82rem;
+    color:var(--ivory-dim);
+    background:transparent;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    cursor:pointer;
+  }
+  .end-match-btn:active{background:var(--felt-1);}
+  .end-match-confirm{
+    margin-top:9px;
+    background:var(--felt-1);
+    border:1px solid var(--red);
+    border-radius:12px;
+    padding:10px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    font-size:.76rem;
+    color:var(--ivory-dim);
+  }
+  .end-match-confirm-btns{display:flex;gap:8px;}
+  .end-match-confirm-btns .preset-btn{flex:1;}
+  .preset-btn.danger{background:var(--red);color:var(--ivory);border-color:var(--red-soft);}
+
+  /* ---- 対局履歴モーダル ---- */
+  .history-modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(5,16,12,.72);
+    z-index:50;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .history-modal{
+    width:100%;
+    max-width:460px;
+    max-height:92vh;
+    background:var(--felt-0);
+    border:1px solid var(--line);
+    border-radius:18px 18px 0 0;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .history-modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:14px 14px 8px;
+    flex-shrink:0;
+  }
+  .history-modal-title{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:1rem;
+    color:var(--gold-strong);
+  }
+  .history-back{
+    border:0;background:transparent;color:var(--ivory-dim);
+    font-size:.82rem;font-weight:700;cursor:pointer;padding:4px 2px;
+  }
+  .history-close{
+    border:1px solid var(--line);background:var(--felt-1);color:var(--ivory);
+    width:28px;height:28px;border-radius:50%;font-size:.9rem;line-height:1;cursor:pointer;
+  }
+  .history-tabs{
+    display:flex;gap:8px;padding:0 14px 10px;flex-shrink:0;
+  }
+  .history-tabs .preset-btn{flex:1;}
+  .history-modal-body{
+    padding:0 14px 18px;
+    overflow-y:auto;
+  }
+  .history-toolbar{display:flex;gap:8px;margin-bottom:10px;}
+  .history-toolbar .mentsu-add{margin-top:0;}
+  .history-empty{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:.8rem;
+    padding:28px 0;
+  }
+  .history-reminder{
+    margin-top:10px;
+    font-size:.68rem;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .history-list{display:flex;flex-direction:column;gap:8px;}
+  .history-card{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    cursor:pointer;
+  }
+  .history-card:active{background:var(--felt-2);}
+  .history-card-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:.66rem;color:var(--ink-soft);
+  }
+  .history-title{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.88rem;
+    color:var(--ivory);
+    margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .history-winner{
+    margin-top:5px;
+    font-size:.78rem;
+    color:var(--gold-strong);
+    display:flex;align-items:center;gap:6px;
+  }
+  .history-winner-money{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+  }
+  .history-detail-title-row{margin-bottom:2px;}
+  .history-detail-title{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:.95rem;
+    color:var(--ivory);
+    cursor:pointer;
+  }
+  .history-detail-meta{
+    font-size:.7rem;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .history-detail-actions{
+    display:flex;flex-direction:column;gap:8px;
+    margin-top:14px;
+  }
+  .danger-text{color:var(--red-soft) !important;border-color:var(--red) !important;}
+
+  .stat-group{margin-bottom:16px;}
+  .stat-group-head{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:700;
+    font-size:.82rem;
+    color:var(--ivory-dim);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:8px;
+  }
+  .stat-cards{display:flex;flex-direction:column;gap:8px;}
+  .stat-card{
+    background:var(--felt-1);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 12px;
+  }
+  .stat-name{
+    font-family:"Zen Maru Gothic",sans-serif;
+    font-weight:900;
+    font-size:.88rem;
+    color:var(--gold-strong);
+    margin-bottom:4px;
+  }
+  .stat-row{
+    font-size:.72rem;
+    color:var(--ivory-dim);
+    display:flex;
+    justify-content:space-between;
+    padding:2px 0;
+  }
+  .stat-row b{color:var(--ivory);font-variant-numeric:tabular-nums;}
+  .share-fallback-toast{
+    margin:0 14px 12px;
+    background:var(--felt-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:.72rem;
+    color:var(--ivory-dim);
+    word-break:break-all;
   }
 
   /* ---- accordion ---- */
@@ -924,11 +1157,12 @@
     font-variant-numeric:tabular-nums;font-size:.95rem;color:var(--ivory);
   }
 </style>
-</head>
-<body>
 
 <div class="stage">
-  <h1 id="appTitle"><span class="tile">🀄</span>麻雀点数電卓</h1>
+  <div class="title-row">
+    <h1 id="appTitle"><span class="tile">🀄</span>麻雀点数電卓</h1>
+    <button class="hamburger-btn" id="historyMenuBtn" onclick="openHistoryModal()" title="対局履歴" style="display:none;">☰</button>
+  </div>
 
   <div id="calcTab">
     <div class="toprow">
@@ -977,6 +1211,8 @@
 </div>
 
 <nav class="bottom-nav" id="bottomNav"></nav>
+<div id="historyModalRoot"></div>
+<input type="file" id="importFileInput" accept="application/json,.json" style="display:none;" onchange="handleImportFile(this.files)">
 
 <script>
 /* =========================================================================
@@ -1421,7 +1657,8 @@ function resultHtml(stateLabel, ronFuLabel, tsumoFuLabel, r){
    得点記録票タブ — state, handlers, rendering
    ========================================================================= */
 
-const LOG_STORAGE_KEY = 'mahjong-log-v1';
+const LOG_STORAGE_KEY = 'mahjong-log-v2';
+const LOG_STORAGE_KEY_V1 = 'mahjong-log-v1'; // 旧バージョン。存在すればv2へ読み替えて移行する。
 
 function defaultLogState(){
   return {
@@ -1441,9 +1678,12 @@ function defaultLogState(){
       chipUnitYen: 1000,
       presentationMode: false, // 演出モード: 終局ボタンを押すまで順位・収支を隠す
     },
-    hanchans: [], // { id, scores:{name:val}, busterOf:{bustedName:busterName} }
-    chips: {},    // name -> 最終枚数
+    hanchans: [], // 進行中の対局のみ。{ id, scores:{name:val}, busterOf:{bustedName:busterName} }
+    chips: {},    // 進行中の対局のみ。name -> 最終枚数
     hanchanSeq: 1,
+    currentMatchStartedAt: null, // 進行中の対局の最初の半荘を記録した時刻(ISO文字列)
+    matchHistory: [], // 「対局を終了する」で確定・保存された過去の対局一覧(新しい順)
+    // { id, startedAt, endedAt, title, settingsSnapshot, hanchans, chips }
     ui: {
       settingsOpen: true,
       chipsOpen: false,
@@ -1453,22 +1693,39 @@ function defaultLogState(){
       formBuster: {},
       revealActive: false, // 演出モードで「終局」ボタンを押したか
       revealStep: 0,       // 発表済みの順位グループ数
+      confirmEndMatch: false,   // 「対局を終了する」の誤タップ防止確認中か
+      historyOpen: false,       // 対局履歴モーダルを開いているか
+      historyView: 'list',      // 'list' | 'detail' | 'stats'
+      historyDetailId: null,
+      editingArchiveTitleId: null,
+      confirmDeleteArchiveId: null,
+      importResultMsg: null,
+      shareFallbackMsg: null,
     },
+  };
+}
+
+// 保存されているデータ(v2、無ければ旧v1)をパースしてdefaultLogState()にマージする、
+// v1/v2共通の下地処理。matchHistoryはv1データに存在しないため自然に[]で補完される。
+function mergeParsedLogState(parsed){
+  const base = defaultLogState();
+  return {
+    ...base,
+    ...parsed,
+    settings: { ...base.settings, ...(parsed.settings || {}) },
+    matchHistory: Array.isArray(parsed.matchHistory) ? parsed.matchHistory : [],
+    ui: base.ui, // 開閉状態・入力途中のフォームは復元しない
   };
 }
 
 function loadLogState(){
   try {
     const raw = localStorage.getItem(LOG_STORAGE_KEY);
-    if (!raw) return defaultLogState();
-    const parsed = JSON.parse(raw);
-    const base = defaultLogState();
-    return {
-      ...base,
-      ...parsed,
-      settings: { ...base.settings, ...(parsed.settings || {}) },
-      ui: base.ui, // 開閉状態・入力途中のフォームは復元しない
-    };
+    if (raw) return mergeParsedLogState(JSON.parse(raw));
+    // v2キーが無ければ旧v1キーを探し、あれば読み替えて移行する（matchHistoryは[]で補完）。
+    const rawV1 = localStorage.getItem(LOG_STORAGE_KEY_V1);
+    if (rawV1) return mergeParsedLogState(JSON.parse(rawV1));
+    return defaultLogState();
   } catch (e) {
     return defaultLogState(); // localStorageが使えない環境でもメモリ上で動く
   }
@@ -1476,13 +1733,14 @@ function loadLogState(){
 
 function saveLogState(){
   try {
-    const { settings, hanchans, chips, hanchanSeq } = logState;
-    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify({ settings, hanchans, chips, hanchanSeq }));
+    const { settings, hanchans, chips, hanchanSeq, currentMatchStartedAt, matchHistory } = logState;
+    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify({ settings, hanchans, chips, hanchanSeq, currentMatchStartedAt, matchHistory }));
   } catch (e) { /* 保存できない環境ではメモリ上のみで継続 */ }
 }
 
 const logState = loadLogState();
 if (logState.hanchans.length > 0) logState.ui.settingsOpen = false;
+saveLogState(); // v1からの移行時などに、v2キーへ即座に書き直しておく
 
 function activePlayers(){
   return logState.settings.playerNames.slice(0, logState.settings.playerCount);
@@ -1587,6 +1845,7 @@ function togglePresentationMode(){
   logState.settings.presentationMode = !logState.settings.presentationMode;
   logState.ui.revealActive = false;
   logState.ui.revealStep = 0;
+  logState.ui.confirmEndMatch = false;
   saveLogState(); scheduleRenderApp();
 }
 // 発表順は「2位→3位→…→1位」。1位（優勝）を最後にとっておくことで、
@@ -1602,6 +1861,52 @@ function startReveal(){
 function revealNext(totalGroups){
   if (logState.ui.revealStep < totalGroups) logState.ui.revealStep++;
   scheduleRenderApp();
+}
+
+/* ---- 対局を終了する（現在の進行中対局をmatchHistoryへアーカイブしてリセット） ---- */
+function requestEndMatch(){
+  if (logState.hanchans.length === 0) return;
+  logState.ui.confirmEndMatch = true;
+  scheduleRenderApp();
+}
+function cancelEndMatch(){
+  logState.ui.confirmEndMatch = false;
+  scheduleRenderApp();
+}
+function confirmEndMatch(){
+  logState.ui.confirmEndMatch = false;
+  archiveCurrentMatch();
+}
+// 進行中のhanchans/chips/settingsをスナップショットとしてmatchHistoryへ保存し、
+// 進行中データ(hanchans/chips/hanchanSeq/演出状態)だけをリセットする。
+// settingsは次の対局にそのまま引き継ぐため、ここではリセットしない。
+function archiveCurrentMatch(){
+  if (logState.hanchans.length === 0) return;
+  const entry = {
+    id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    startedAt: logState.currentMatchStartedAt || new Date().toISOString(),
+    endedAt: new Date().toISOString(),
+    title: '',
+    settingsSnapshot: JSON.parse(JSON.stringify(logState.settings)),
+    hanchans: JSON.parse(JSON.stringify(logState.hanchans)),
+    chips: JSON.parse(JSON.stringify(logState.chips)),
+  };
+  logState.matchHistory.unshift(entry);
+  logState.hanchans = [];
+  logState.chips = {};
+  logState.hanchanSeq = 1;
+  logState.currentMatchStartedAt = null;
+  logState.ui.revealActive = false;
+  logState.ui.revealStep = 0;
+  logState.ui.confirmEndMatch = false;
+  cancelEditHanchan_noRender();
+  saveLogState();
+  scheduleRenderApp();
+}
+// cancelEditHanchan()相当だがscheduleRenderAppを二重に呼ばないための内部版
+function cancelEditHanchan_noRender(){
+  logState.ui.editingHanchanId = null;
+  resetFormScores();
 }
 
 /* ---- hanchan form handlers ---- */
@@ -1635,8 +1940,14 @@ function recordHanchan(){
     if (h) { h.scores = scores; h.busterOf = busterOf; }
     logState.ui.editingHanchanId = null;
   } else {
+    // この対局で最初の半荘を記録した瞬間の時刻を、あとで履歴に保存する時の
+    // startedAtとして使う（既に記録中ならそのまま）。
+    if (logState.hanchans.length === 0 && !logState.currentMatchStartedAt) {
+      logState.currentMatchStartedAt = new Date().toISOString();
+    }
     logState.hanchans.unshift({ id: logState.hanchanSeq++, scores, busterOf });
   }
+  logState.ui.confirmEndMatch = false;
   resetFormScores();
   // 演出モード中に新しい半荘を記録したら、対局が続いている証拠なので
   // 発表済みの結果はまた隠しておく（次の「終局」まで再びネタバレしない）。
@@ -1864,15 +2175,19 @@ function renderHanchanForm(){
     </section>`;
 }
 
-function renderHanchanLog(){
-  if (logState.hanchans.length === 0) {
+// hanchansList/sは対局履歴の詳細画面からも(settingsSnapshotを渡して)再利用できるよう
+// パラメータ化してある。opts.readOnly=trueで編集・削除ボタンを非表示にする
+// (過去の確定済み対局は書き換えさせない)。
+function renderHanchanLog(hanchansList, s, opts){
+  opts = opts || {};
+  const readOnly = !!opts.readOnly;
+  if (hanchansList.length === 0) {
     return `<section><div class="sec-title">対局ログ</div><div class="log-empty">まだ記録がありません</div></section>`;
   }
-  const s = settingsWithPlayers();
   // 「第◯半荘」は作成時の連番(id)ではなく、削除しても欠番が出ないよう
   // 現在残っている対局ログの中での順番（一番古いものを1として数え直す）で表示する。
-  const cards = logState.hanchans.map((h, idx)=>{
-    const dispNum = logState.hanchans.length - idx;
+  const cards = hanchansList.map((h, idx)=>{
+    const dispNum = hanchansList.length - idx;
     const { pt, ranked } = calcHanchanResult(h, s);
     const rows = [...ranked].sort((a,b)=>a.loRank-b.loRank).map(r=>`
       <div class="hc-row ${r.loRank===1?'rank1':''}">
@@ -1885,15 +2200,15 @@ function renderHanchanLog(){
       <div class="hanchan-card">
         <div class="hc-head">
           <span class="hc-title">第${dispNum}半荘</span>
-          <span class="hc-actions">
+          ${readOnly ? '' : `<span class="hc-actions">
             <button onclick="editHanchan(${h.id})">✎</button>
             <button onclick="deleteHanchan(${h.id})">×</button>
-          </span>
+          </span>`}
         </div>
         <div class="hc-rows">${rows}</div>
       </div>`;
   }).join('');
-  return `<section><div class="sec-title">対局ログ<span class="hint">${logState.hanchans.length}半荘</span></div><div style="display:flex;flex-direction:column;gap:8px;">${cards}</div></section>`;
+  return `<section><div class="sec-title">対局ログ<span class="hint">${hanchansList.length}半荘</span></div><div style="display:flex;flex-direction:column;gap:8px;">${cards}</div></section>`;
 }
 
 function totalCardsHtml(order, totals, topMoney){
@@ -1944,11 +2259,31 @@ function revealGroupCardHtml(group, totals){
     </div>`;
 }
 
+// 「対局を終了する」系のボタン・確認UI。isPresentationDone=trueの時だけ
+// 「対局を終了して履歴に保存」の文言・演出後の見た目にする(演出モードでは
+// 発表が終わるまでこのボタン自体を出さない＝呼び出し側で制御)。
+function renderEndMatchControls(isPresentationDone){
+  if (logState.hanchans.length === 0) return '';
+  if (logState.ui.confirmEndMatch) {
+    return `
+      <div class="end-match-confirm">
+        <span>この対局を終了して履歴に保存しますか？</span>
+        <div class="end-match-confirm-btns">
+          <button class="preset-btn" onclick="cancelEndMatch()">キャンセル</button>
+          <button class="preset-btn danger" onclick="confirmEndMatch()">終了して保存</button>
+        </div>
+      </div>`;
+  }
+  const label = isPresentationDone ? '🏁 対局を終了して履歴に保存' : '対局を終了する';
+  return `<button class="end-match-btn" onclick="requestEndMatch()">${label}</button>`;
+}
+
 function renderStickyHeader(s, totals){
   const players = activePlayers();
   const presentation = logState.settings.presentationMode;
   const modeSwitchHtml = `
     <div class="mode-switch-row">
+      <button class="share-icon-btn" onclick="shareCurrentResult()" title="現在の収支をシェア">📤</button>
       <span class="mode-label">演出モード</span>
       <span class="switch ${presentation?'on':''}" onclick="togglePresentationMode()"></span>
     </div>`;
@@ -1956,7 +2291,7 @@ function renderStickyHeader(s, totals){
   if (!presentation) {
     const order = [...players].sort((a,b)=> totals.money[b]-totals.money[a]);
     const topMoney = order.length ? totals.money[order[0]] : 0;
-    return `<div class="sticky-header">${modeSwitchHtml}${totalCardsHtml(order, totals, topMoney)}</div>`;
+    return `<div class="sticky-header">${modeSwitchHtml}${totalCardsHtml(order, totals, topMoney)}${renderEndMatchControls(false)}</div>`;
   }
 
   if (!logState.ui.revealActive) {
@@ -1969,12 +2304,14 @@ function renderStickyHeader(s, totals){
   const done = logState.ui.revealStep >= groups.length;
   const shownGroups = done ? [...groups].sort((a,b)=>a.loRank-b.loRank) : groups.slice(0, logState.ui.revealStep);
 
-  return `<div class="sticky-header">${modeSwitchHtml}
+  // 発表中〜発表後は順位カードが積み重なって縦に長くなり得るため、sticky解除
+  // (header-block)にして、スクロール時に下のフォームなどを覆い隠さないようにする。
+  return `<div class="header-block">${modeSwitchHtml}
     <div class="reveal-area">
       ${shownGroups.map(g => revealGroupCardHtml(g, totals)).join('')}
     </div>
     ${done
-      ? `<div class="reveal-done">🎉 発表終了！次の半荘を記録するとまた隠れます</div>`
+      ? `<div class="reveal-done">🎉 発表終了！次の半荘を記録するとまた隠れます</div>${renderEndMatchControls(true)}`
       : `<button class="reveal-btn" onclick="revealNext(${groups.length})">次の順位を発表 →</button>`}
   </div>`;
 }
@@ -1985,7 +2322,405 @@ function renderLog(){
   const headerHtml = renderStickyHeader(s, totals);
 
   document.getElementById('logTab').innerHTML =
-    headerHtml + renderSettingsAccordion() + renderChipsAccordion() + renderHanchanForm() + renderHanchanLog();
+    headerHtml + renderSettingsAccordion() + renderChipsAccordion() + renderHanchanForm() + renderHanchanLog(logState.hanchans, s);
+}
+
+/* =========================================================================
+   対局履歴モーダル（ハンバーガーメニュー）
+   ========================================================================= */
+
+function memberKey(names){ return [...names].slice().sort().join('・'); }
+
+function formatMatchDate(startedAt, endedAt){
+  const d = new Date(endedAt || startedAt || Date.now());
+  if (isNaN(d.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/* ---- open/close/navigation ---- */
+function openHistoryModal(){
+  logState.ui.historyOpen = true;
+  logState.ui.historyView = 'list';
+  logState.ui.historyDetailId = null;
+  logState.ui.importResultMsg = null;
+  scheduleRenderApp();
+}
+function closeHistoryModal(){
+  logState.ui.historyOpen = false;
+  logState.ui.editingArchiveTitleId = null;
+  logState.ui.confirmDeleteArchiveId = null;
+  scheduleRenderApp();
+}
+function openHistoryDetail(id){
+  logState.ui.historyView = 'detail';
+  logState.ui.historyDetailId = id;
+  scheduleRenderApp();
+}
+function backToHistoryList(){
+  logState.ui.historyView = 'list';
+  logState.ui.historyDetailId = null;
+  logState.ui.editingArchiveTitleId = null;
+  logState.ui.confirmDeleteArchiveId = null;
+  scheduleRenderApp();
+}
+function openHistoryStats(){
+  logState.ui.historyView = 'stats';
+  scheduleRenderApp();
+}
+
+/* ---- 一覧 ---- */
+function renderHistoryList(){
+  const list = logState.matchHistory;
+  if (list.length === 0) {
+    return `<div class="history-empty">まだ保存された対局はありません<br>「対局を終了する」を押すと、ここに記録が残ります</div>`;
+  }
+  const cards = list.map(m => {
+    const s = m.settingsSnapshot;
+    const players = s.playerNames.slice(0, s.playerCount);
+    const totals = calcTotals(m.hanchans, m.chips, { ...s, players });
+    const order = [...players].sort((a,b)=>totals.money[b]-totals.money[a]);
+    const winner = order[0];
+    return `
+      <div class="history-card" onclick="openHistoryDetail('${escKey(m.id)}')">
+        <div class="history-card-head">
+          <span>${formatMatchDate(m.startedAt, m.endedAt)}</span>
+          <span>${m.hanchans.length}半荘</span>
+        </div>
+        <div class="history-title">${m.title ? escapeHtml(m.title) : escapeHtml(players.join('・'))}</div>
+        ${winner ? `<div class="history-winner">🏆 ${escapeHtml(winner)}<span class="history-winner-money">${formatMoney(totals.money[winner])}</span></div>` : ''}
+      </div>`;
+  }).join('');
+  return `<div class="history-list">${cards}</div>`;
+}
+
+/* ---- 詳細 ---- */
+function renderHistoryDetail(id){
+  const m = logState.matchHistory.find(x => x.id === id);
+  if (!m) return `<div class="history-empty">見つかりませんでした</div>`;
+  const s = m.settingsSnapshot;
+  const players = s.playerNames.slice(0, s.playerCount);
+  const settingsForCalc = { ...s, players };
+  const totals = calcTotals(m.hanchans, m.chips, settingsForCalc);
+  const order = [...players].sort((a,b)=>totals.money[b]-totals.money[a]);
+  const topMoney = order.length ? totals.money[order[0]] : 0;
+  const editingTitle = logState.ui.editingArchiveTitleId === id;
+  const chipSum = players.reduce((sum,p)=> sum + (m.chips[p]||0), 0);
+
+  const titleHtml = editingTitle
+    ? `<input class="text-input" id="archiveTitleInput" value="${escapeHtml(m.title||'')}" placeholder="対局メモ・タイトル（例: 〇〇杯 第3戦）" onchange="saveArchiveTitle('${escKey(id)}', this.value)" onblur="saveArchiveTitle('${escKey(id)}', this.value)">`
+    : `<div class="history-detail-title" onclick="startEditArchiveTitle('${escKey(id)}')">${m.title ? escapeHtml(m.title) : '📝 タイトル・メモを追加'}</div>`;
+
+  const deleteHtml = logState.ui.confirmDeleteArchiveId === id
+    ? `<div class="end-match-confirm">
+        <span>この対局の記録を削除しますか？元に戻せません。</span>
+        <div class="end-match-confirm-btns">
+          <button class="preset-btn" onclick="cancelDeleteArchive()">キャンセル</button>
+          <button class="preset-btn danger" onclick="confirmDeleteArchive('${escKey(id)}')">削除する</button>
+        </div>
+      </div>`
+    : `<button class="mentsu-add danger-text" onclick="requestDeleteArchive('${escKey(id)}')">🗑 この記録を削除</button>`;
+
+  return `
+    <div class="history-detail">
+      <div class="history-detail-title-row">${titleHtml}</div>
+      <div class="history-detail-meta">${formatMatchDate(m.startedAt, m.endedAt)}・${escapeHtml(players.join('・'))}</div>
+      ${totalCardsHtml(order, totals, topMoney)}
+      ${chipSum !== 0 ? `<div class="check-banner bad" style="margin-top:8px;">⚠ チップ合計 ${chipSum>0?'+':''}${chipSum}枚（ゼロサムになっていません）</div>` : ''}
+      ${renderHanchanLog(m.hanchans, settingsForCalc, { readOnly: true })}
+      <div class="history-detail-actions">
+        <button class="mentsu-add" onclick="shareMatchResult('${escKey(id)}')">📤 結果をシェア</button>
+        ${deleteHtml}
+      </div>
+    </div>`;
+}
+
+function startEditArchiveTitle(id){
+  logState.ui.editingArchiveTitleId = id;
+  scheduleRenderApp(() => {
+    const el = document.getElementById('archiveTitleInput');
+    if (el) { el.focus(); el.select(); }
+  });
+}
+function saveArchiveTitle(id, value){
+  if (logState.ui.editingArchiveTitleId !== id) return; // 二重発火(change+blur)による重複保存を防ぐ
+  const m = logState.matchHistory.find(x => x.id === id);
+  if (m) m.title = (value || '').trim();
+  logState.ui.editingArchiveTitleId = null;
+  saveLogState();
+  scheduleRenderApp();
+}
+function requestDeleteArchive(id){
+  logState.ui.confirmDeleteArchiveId = id;
+  scheduleRenderApp();
+}
+function cancelDeleteArchive(){
+  logState.ui.confirmDeleteArchiveId = null;
+  scheduleRenderApp();
+}
+function confirmDeleteArchive(id){
+  logState.matchHistory = logState.matchHistory.filter(x => x.id !== id);
+  logState.ui.confirmDeleteArchiveId = null;
+  if (logState.ui.historyDetailId === id) {
+    logState.ui.historyView = 'list';
+    logState.ui.historyDetailId = null;
+  }
+  saveLogState();
+  scheduleRenderApp();
+}
+
+/* ---- 通算成績 ---- */
+// matchHistory中、playerNameが参加していた全対局の全半荘を対象に集計する。
+// 「試合数」は半荘数（1半荘あたりの平均収支などと単位を揃えるため）。
+function calcCareerStats(matchHistory, playerName){
+  const relevant = matchHistory.filter(m => {
+    const s = m.settingsSnapshot;
+    return s && s.playerNames.slice(0, s.playerCount).includes(playerName);
+  });
+  if (relevant.length === 0) return null;
+
+  let games = 0, rankSum = 0, top1 = 0, top2 = 0, last = 0, tobiCount = 0, moneySum = 0, maxScore = -Infinity;
+  relevant.forEach(m => {
+    const s = m.settingsSnapshot;
+    const players = s.playerNames.slice(0, s.playerCount);
+    const settingsForCalc = { ...s, players };
+    m.hanchans.forEach(h => {
+      if (!(playerName in h.scores)) return;
+      games++;
+      const entries = players.map(p => ({ name: p, score: h.scores[p] }));
+      const ranked = rankPlayers(entries);
+      const me = ranked.find(r => r.name === playerName);
+      rankSum += (me.loRank + me.hiRank) / 2; // 同着は帯の平均順位として数える
+      if (me.loRank === 1) top1++;
+      if (me.hiRank <= 2) top2++;
+      if (me.hiRank === s.playerCount) last++;
+      if (h.scores[playerName] < 0) tobiCount++;
+      if (h.scores[playerName] > maxScore) maxScore = h.scores[playerName];
+      const { pt } = calcHanchanResult(h, settingsForCalc);
+      moneySum += pt[playerName] * s.rate;
+    });
+    moneySum += ((m.chips && m.chips[playerName]) || 0) * s.chipUnitYen;
+  });
+  if (games === 0) return null;
+
+  return {
+    games,
+    avgRank: rankSum / games,
+    topRate: top1 / games,
+    top2Rate: top2 / games,     // 連対率（4人打ち用）
+    lastRate: last / games,
+    lastAvoidRate: 1 - (last / games), // ラス回避率（3人打ち用）
+    maxScore: maxScore === -Infinity ? 0 : maxScore,
+    avgMoneyPerHanchan: moneySum / games,
+    totalMoney: moneySum,
+    tobiCount,
+  };
+}
+
+function renderHistoryStats(){
+  if (logState.matchHistory.length === 0) {
+    return `<div class="history-empty">まだ成績データがありません<br>対局を終了すると、ここに通算成績が表示されます</div>`;
+  }
+  // メンバー構成（参加者の名前の組み合わせ）ごとにグループ分けする。
+  const groups = {};
+  logState.matchHistory.forEach(m => {
+    const s = m.settingsSnapshot;
+    const players = s.playerNames.slice(0, s.playerCount);
+    const key = memberKey(players);
+    if (!groups[key]) groups[key] = { players, playerCount: s.playerCount, matches: [] };
+    groups[key].matches.push(m);
+  });
+  const groupList = Object.values(groups).sort((a,b) => b.matches.length - a.matches.length);
+
+  return groupList.map(g => {
+    const totalHanchans = g.matches.reduce((sum,m)=>sum+m.hanchans.length, 0);
+    const cards = g.players.map(p => {
+      const st = calcCareerStats(g.matches, p);
+      if (!st) return '';
+      const primaryLine = g.playerCount === 4
+        ? `<div class="stat-row">連対率 <b>${(st.top2Rate*100).toFixed(0)}%</b></div>`
+        : `<div class="stat-row">トップ率 <b>${(st.topRate*100).toFixed(0)}%</b> ／ ラス回避率 <b>${(st.lastAvoidRate*100).toFixed(0)}%</b></div>`;
+      const secondaryLine = g.playerCount === 4
+        ? `<div class="stat-row">トップ率 <b>${(st.topRate*100).toFixed(0)}%</b> ／ ラス率 <b>${(st.lastRate*100).toFixed(0)}%</b></div>`
+        : `<div class="stat-row">ラス率 <b>${(st.lastRate*100).toFixed(0)}%</b></div>`;
+      const moneyColor = v => v >= 0 ? '#9fe0bd' : 'var(--red-soft)';
+      return `
+        <div class="stat-card">
+          <div class="stat-name">${escapeHtml(p)}</div>
+          <div class="stat-row">平均順位 <b>${st.avgRank.toFixed(2)}</b></div>
+          <div class="stat-row">試合数 <b>${st.games}半荘</b></div>
+          ${primaryLine}
+          ${secondaryLine}
+          <div class="stat-row">MAX得点 <b>${st.maxScore.toLocaleString()}</b></div>
+          <div class="stat-row">飛んだ回数 <b>${st.tobiCount}回</b></div>
+          <div class="stat-row">平均収支(半荘あたり) <b style="color:${moneyColor(st.avgMoneyPerHanchan)}">${formatMoney(st.avgMoneyPerHanchan)}</b></div>
+          <div class="stat-row">通算収支 <b style="color:${moneyColor(st.totalMoney)}">${formatMoney(st.totalMoney)}</b></div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="stat-group">
+        <div class="stat-group-head"><span>${escapeHtml(g.players.join('・'))}</span><span class="hint">${g.matches.length}対局・${totalHanchans}半荘</span></div>
+        <div class="stat-cards">${cards}</div>
+      </div>`;
+  }).join('');
+}
+
+/* ---- エクスポート / インポート / シェア ---- */
+async function exportMatchHistory(includeInProgress){
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    appVersion: 'mahjong-score-log-v2',
+    matchHistory: logState.matchHistory,
+  };
+  if (includeInProgress && logState.hanchans.length > 0) {
+    payload.inProgress = {
+      settings: logState.settings,
+      hanchans: logState.hanchans,
+      chips: logState.chips,
+      startedAt: logState.currentMatchStartedAt,
+    };
+  }
+  const json = JSON.stringify(payload, null, 2);
+  const filename = `mahjong-log-${new Date().toISOString().slice(0,10)}.json`;
+  const blob = new Blob([json], { type: 'application/json' });
+
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: '麻雀対局履歴' });
+        return;
+      }
+    } catch (e) { /* キャンセル・失敗時は下のダウンロードにフォールバック */ }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function triggerImport(){
+  const el = document.getElementById('importFileInput');
+  if (el) el.click();
+}
+function handleImportFile(files){
+  const file = files && files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const incoming = Array.isArray(data.matchHistory) ? data.matchHistory
+        : Array.isArray(data) ? data : [];
+      const existingIds = new Set(logState.matchHistory.map(m => m.id));
+      let added = 0, skipped = 0;
+      incoming.forEach(m => {
+        if (!m || !m.id || !m.settingsSnapshot || !Array.isArray(m.hanchans)) { skipped++; return; }
+        if (existingIds.has(m.id)) { skipped++; return; }
+        existingIds.add(m.id);
+        logState.matchHistory.push(m);
+        added++;
+      });
+      logState.matchHistory.sort((a,b) => new Date(b.endedAt||b.startedAt||0) - new Date(a.endedAt||a.startedAt||0));
+      saveLogState();
+      logState.ui.importResultMsg = `${added}件を読み込みました${skipped>0?`（${skipped}件は重複・不正な形式のためスキップ）`:''}`;
+    } catch (e) {
+      logState.ui.importResultMsg = '読み込みに失敗しました。ファイル形式を確認してください。';
+    }
+    scheduleRenderApp();
+  };
+  reader.readAsText(file);
+  const el = document.getElementById('importFileInput');
+  if (el) el.value = '';
+}
+
+function buildShareText(players, totals, headerLine){
+  const order = [...players].sort((a,b)=>totals.money[b]-totals.money[a]);
+  const lines = order.map((p,i) => `${i+1}位 ${p}　${formatMoney(totals.money[p])}`);
+  return `${headerLine ? headerLine + '\n\n' : ''}${lines.join('\n')}`;
+}
+async function shareText(text, title){
+  if (navigator.share) {
+    try {
+      await navigator.share({ text, title: title || '麻雀対局結果' });
+      return;
+    } catch (e) { /* キャンセル・未対応時は下のフォールバックへ */ }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    logState.ui.shareFallbackMsg = 'クリップボードにコピーしました';
+  } catch (e) {
+    logState.ui.shareFallbackMsg = text; // コピーもできない環境ではテキストをそのまま表示する
+  }
+  scheduleRenderApp();
+  setTimeout(() => { logState.ui.shareFallbackMsg = null; scheduleRenderApp(); }, 4000);
+}
+function shareCurrentResult(){
+  const s = settingsWithPlayers();
+  const totals = calcTotals(logState.hanchans, logState.chips, s);
+  const order = [...s.players].sort((a,b)=>totals.money[b]-totals.money[a]);
+  const header = order.length ? `🀄 現在${order[0]}さんがトップ！収支${formatMoney(totals.money[order[0]])}` : '';
+  shareText(buildShareText(s.players, totals, header));
+}
+function shareMatchResult(id){
+  const m = logState.matchHistory.find(x => x.id === id);
+  if (!m) return;
+  const s = m.settingsSnapshot;
+  const players = s.playerNames.slice(0, s.playerCount);
+  const totals = calcTotals(m.hanchans, m.chips, { ...s, players });
+  const order = [...players].sort((a,b)=>totals.money[b]-totals.money[a]);
+  const header = order.length ? `🀄 ${order[0]}さん第1位！収支${formatMoney(totals.money[order[0]])}` : '';
+  shareText(buildShareText(players, totals, header));
+}
+
+/* ---- モーダル全体の描画 ---- */
+function renderHistoryModal(){
+  const root = document.getElementById('historyModalRoot');
+  if (!logState.ui.historyOpen) { root.innerHTML = ''; return; }
+  const view = logState.ui.historyView;
+
+  let title = '対局履歴';
+  let bodyHtml = '';
+  if (view === 'detail') {
+    title = '対局の詳細';
+    bodyHtml = renderHistoryDetail(logState.ui.historyDetailId);
+  } else if (view === 'stats') {
+    title = '成績';
+    bodyHtml = renderHistoryStats();
+  } else {
+    title = '対局履歴';
+    bodyHtml = `
+      ${logState.ui.importResultMsg ? `<div class="check-banner ok" style="margin-bottom:10px;">${escapeHtml(logState.ui.importResultMsg)}</div>` : ''}
+      <div class="history-toolbar">
+        <button class="mentsu-add" onclick="exportMatchHistory(false)">⬇ エクスポート</button>
+        <button class="mentsu-add" onclick="triggerImport()">⬆ インポート</button>
+      </div>
+      ${renderHistoryList()}
+      ${logState.matchHistory.length > 0 ? `<div class="history-reminder">💡 機種変更・端末の買い替え前にはエクスポートしておくと安心です</div>` : ''}
+    `;
+  }
+
+  root.innerHTML = `
+    <div class="history-modal-overlay">
+      <div class="history-modal">
+        <div class="history-modal-head">
+          ${view === 'detail'
+            ? `<button class="history-back" onclick="backToHistoryList()">← 戻る</button>`
+            : `<span class="history-modal-title">${title}</span>`}
+          <button class="history-close" onclick="closeHistoryModal()">×</button>
+        </div>
+        ${(view === 'list' || view === 'stats') ? `
+        <div class="history-tabs">
+          <button class="preset-btn ${view==='list'?'active':''}" onclick="backToHistoryList()">対局一覧</button>
+          <button class="preset-btn ${view==='stats'?'active':''}" onclick="openHistoryStats()">成績</button>
+        </div>` : ''}
+        <div class="history-modal-body">${bodyHtml}</div>
+        ${logState.ui.shareFallbackMsg ? `<div class="share-fallback-toast">${escapeHtml(logState.ui.shareFallbackMsg)}</div>` : ''}
+      </div>
+    </div>`;
 }
 
 /* ---- top-level bootstrap ---- */
@@ -2015,11 +2750,15 @@ function renderApp(){
     : '<span class="tile">🀄</span>麻雀点数電卓';
   document.getElementById('calcTab').style.display = onLog ? 'none' : '';
   document.getElementById('logTab').style.display = onLog ? '' : 'none';
+  // 対局履歴(☰)は得点記録票タブでのみ意味を持つので、それ以外では隠す。
+  document.getElementById('historyMenuBtn').style.display = onLog ? '' : 'none';
+  if (!onLog) logState.ui.historyOpen = false; // 計算タブに切り替えたらモーダルも閉じる
   document.getElementById('bottomNav').innerHTML = `
     <button class="${onLog?'':'active'}" onclick="setActiveTab('calc')"><span class="ic">🀄</span>点数計算</button>
     <button class="${onLog?'active':''}" onclick="setActiveTab('log')"><span class="ic">📋</span>得点記録</button>
   `;
   if (onLog) renderLog(); else render();
+  renderHistoryModal();
 }
 
 renderApp();
